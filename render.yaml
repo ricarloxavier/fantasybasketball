@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: putilla-awards
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python deploy_start.py
+    healthCheckPath: /health
+    envVars:
+      - key: APP_USERNAME
+        sync: false
+      - key: APP_PASSWORD
+        sync: false
+      - key: YAHOO_OAUTH_JSON
+        sync: false

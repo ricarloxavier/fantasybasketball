@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# OAuth credentials - SENSITIVE!
+oauth2.json
+*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local test files
+test_*.py
+scratch.py
+
+# Local credentials and user preferences
+.env
+.env.*
+!.env.example
+PASSWORD_INFO.md
+waiver_user_prefs.json
+.venv/
+.claude/
