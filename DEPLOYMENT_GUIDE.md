@@ -7,8 +7,9 @@ with Gunicorn, checks `/health`, and uses Python 3.11.
 
 1. Create `oauth2.json` locally and complete Yahoo authorization as described in
    `README.md`. Keep this file private. It is ignored by Git.
-2. Push this folder to a **private** GitHub repository. Do not add `oauth2.json`
-   or any password to the repository.
+2. The source is published at
+   [ricarloxavier/fantasybasketball](https://github.com/ricarloxavier/fantasybasketball).
+   This repository is public. Do not add `oauth2.json` or any password to it.
 3. In Render, create a new Blueprint from that repository. Render reads
    `render.yaml` and prompts for these secret environment variables:
    - `APP_USERNAME`: username for the app's HTTP Basic Auth login

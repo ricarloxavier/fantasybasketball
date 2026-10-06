@@ -19,7 +19,7 @@ A local web app with:
 
 ```bash
 cd /Users/ricarlo/gpt-y-fbb
-source venv/bin/activate
+source .venv/bin/activate
 python web_app.py
 ```
 
@@ -114,11 +114,10 @@ Edit `templates/awards.html` to customize:
 
 ## 🔒 Security Note
 
-The current version doesn't require authentication. If you deploy publicly:
-
-1. Consider adding basic auth
-2. Or keep the URL private
-3. OAuth credentials are stored locally and not exposed
+The current version requires HTTP Basic Auth. Set `APP_USERNAME` and
+`APP_PASSWORD` before starting it. For Render, follow
+[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) and provide Yahoo OAuth credentials
+as a secret environment variable, never in GitHub.
 
 ## 💡 Tips
 
