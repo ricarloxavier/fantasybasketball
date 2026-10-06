@@ -206,6 +206,23 @@ def verify_password(username, password):
     return None  # Wrong credentials, show login prompt again
 
 
+def yahoo_oauth_status():
+    """Report token readiness without exposing any credential values."""
+    oauth_path = os.environ.get('YAHOO_OAUTH_FILE', 'oauth2.json')
+    try:
+        with open(oauth_path, 'r', encoding='utf-8') as oauth_file:
+            credentials = json.load(oauth_file)
+    except (OSError, ValueError):
+        return {'ready': False, 'missing_fields': [], 'error': 'Yahoo OAuth file is missing or invalid JSON'}
+
+    if not isinstance(credentials, dict):
+        return {'ready': False, 'missing_fields': [], 'error': 'Yahoo OAuth file must contain a JSON object'}
+
+    required_fields = ('consumer_key', 'consumer_secret', 'access_token', 'refresh_token', 'token_type', 'token_time')
+    missing_fields = [field for field in required_fields if not credentials.get(field)]
+    return {'ready': not missing_fields, 'missing_fields': missing_fields}
+
+
 # ============================================================================
 # AWARDS DATA FUNCTIONS
 # ============================================================================
@@ -235,6 +252,15 @@ def get_awards_data():
         }
     """
     try:
+        oauth_status = yahoo_oauth_status()
+        if not oauth_status['ready']:
+            missing = ', '.join(oauth_status['missing_fields'])
+            detail = f'Missing: {missing}.' if missing else oauth_status.get('error', '')
+            return {
+                'success': False,
+                'error': f'Yahoo OAuth is incomplete on the server. {detail} Update YAHOO_OAUTH_JSON in Render and redeploy.',
+            }
+
         # Step 1: Authenticate with Yahoo Fantasy API
         # This reads oauth2.json which contains refresh tokens
         oauth = ensure_oauth(os.environ.get('YAHOO_OAUTH_FILE', 'oauth2.json'))
@@ -275,6 +301,13 @@ def get_awards_data():
 def health():
     """Lightweight readiness endpoint for the hosting platform."""
     return jsonify({"status": "ok"})
+
+
+@app.route('/api/oauth/status')
+@auth.login_required
+def api_oauth_status():
+    """Show the authenticated operator whether Render has complete Yahoo tokens."""
+    return jsonify(yahoo_oauth_status())
 
 
 @app.route('/')
