@@ -27,6 +27,8 @@ import os
 import json
 from contextlib import redirect_stdout
 from datetime import datetime
+from urllib.parse import urlsplit
+from requests.exceptions import HTTPError
 
 # Import our custom awards calculation functions from awards_api.py
 # These functions handle Yahoo Fantasy API calls and award logic
@@ -283,6 +285,20 @@ def get_awards_data():
             'data': results
         }
     
+    except HTTPError as e:
+        response = e.response
+        if response is not None and response.status_code == 403:
+            hostname = urlsplit(response.url or '').hostname
+            if hostname == 'fantasysports.yahooapis.com':
+                return {
+                    'success': False,
+                    'error': (
+                        'Yahoo denied this app access to the Fantasy Sports API. '
+                        'Apply for access with your Yahoo Client ID at '
+                        'https://sports.yahoo.com/developer/access/ and wait for Yahoo approval.'
+                    ),
+                }
+        return {'success': False, 'error': str(e)}
     except Exception as e:
         # If anything goes wrong, capture full error details for debugging
         import traceback

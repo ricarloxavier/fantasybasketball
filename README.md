@@ -22,6 +22,9 @@ For a hosted deployment, see [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).
    - Go to https://developer.yahoo.com/apps and create an app (any name).  
    - Set Application Type to `Web`. Redirect URI can be `oob` (out-of-band).  
    - Copy the `Client ID` and `Client Secret`.
+   - Apply for [Yahoo Fantasy Sports API access](https://sports.yahoo.com/developer/access/)
+     using that Client ID. Yahoo reviews applications; OAuth login alone does not
+     grant Fantasy Sports API access. The awards and waiver pages require read access.
 
 2) Create `oauth2.json` in this folder:
 ```json

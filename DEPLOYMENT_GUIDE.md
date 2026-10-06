@@ -6,7 +6,8 @@ with Gunicorn, checks `/health`, and uses Python 3.11.
 ## Before you deploy
 
 1. Create `oauth2.json` locally and complete Yahoo authorization as described in
-   `README.md`. Keep this file private. It is ignored by Git.
+   `README.md`. Yahoo must also approve your Client ID for Fantasy Sports API
+   access. Keep this file private. It is ignored by Git.
 2. The source is published at
    [ricarloxavier/fantasybasketball](https://github.com/ricarloxavier/fantasybasketball).
    This repository is public. Do not add `oauth2.json` or any password to it.
