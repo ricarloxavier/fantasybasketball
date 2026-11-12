@@ -1,0 +1,28 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "venv/bin/gunicorn",
+      "runtimeArgs": [
+        "--bind",
+        "127.0.0.1:5000",
+        "--workers",
+        "1",
+        "--timeout",
+        "180",
+        "web.wsgi:app"
+      ],
+      "port": 5000
+    },
+    {
+      "name": "web-dev",
+      "runtimeExecutable": "venv/bin/python",
+      "runtimeArgs": [
+        "scripts/dev_server.py",
+        "5002"
+      ],
+      "port": 5002
+    }
+  ]
+}
