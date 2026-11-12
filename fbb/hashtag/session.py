@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, Optional
@@ -28,6 +29,7 @@ LOGIN_PATH = "/premium/login"
 USER_AGENT = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
               "Chrome/130.0.0.0 Safari/537.36")
 DEFAULT_TTL = 30 * 60
+_POSTBACK_RE = re.compile(r"__doPostBack\('([^']+)'")
 
 
 class HashtagAuthError(RuntimeError):
@@ -49,8 +51,8 @@ class FormState:
 
     def name_for(self, suffix: str) -> str:
         """Full control name for a suffix such as 'DDWEEK' or 'Repeater2$ctl13$CBSUN'."""
-        candidates = [n for n in list(self.fields) + list(self.checkboxes) + list(self.submit_buttons)
-                      if n == suffix or n.endswith("$" + suffix)]
+        candidates = sorted({n for n in list(self.fields) + list(self.checkboxes) + list(self.submit_buttons) + list(self.postback_targets)
+                             if n == suffix or n.endswith("$" + suffix)})
         if not candidates:
             raise HashtagPageError(f"Form control ending in {suffix!r} not found.")
         if len(candidates) > 1:
@@ -108,6 +110,10 @@ def extract_form_state(html: str, page_url: str) -> FormState:
     for ta in form.find_all("textarea"):
         if ta.get("name"):
             state.fields[ta["name"]] = ta.get_text()
+    for a in form.find_all("a", href=True):
+        m = _POSTBACK_RE.search(a["href"])
+        if m:
+            state.postback_targets[m.group(1)] = m.group(1)   # LinkButtons: __doPostBack('ctl00$...$BTNADD','')
     return state
 
 

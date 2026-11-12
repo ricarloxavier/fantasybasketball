@@ -82,7 +82,7 @@ class HashtagClient:
 
     def open_recommendations(self, html: str, state: FormState, url: str, use_cache: bool = True) -> tuple[str, FormState]:
         """Expand the 'Add to my team' panel if it is collapsed."""
-        if "recTable" in html:
+        if 'id="recTable"' in html:
             return html, state
         target = state.name_for("BTNADD")
         html = self.session.postback(url, state, {}, event_target=target, use_cache=use_cache)
@@ -113,7 +113,7 @@ class HashtagClient:
             html = self.session.postback(url, state, overrides, submit=state.name_for("Button5"), use_cache=use_cache)
             state = extract_form_state(html, url)
         if add_target:
-            if add_target not in html:
+            if 'id="recTable"' not in html:
                 html, state = self.open_recommendations(html, state, url, use_cache)
             html = self.session.postback(url, state, {}, event_target=add_target, use_cache=use_cache)
             state = extract_form_state(html, url)

@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import re
 from datetime import date, datetime
-from typing import Any, Optional
+from typing import Any, Mapping, Optional
 
 from bs4 import BeautifulSoup, Tag
 
-from ..categories import ALL_CATEGORIES, name_key, normalize_category, normalize_team
+from ..categories import ALL_CATEGORIES, PERCENT_CATEGORIES, name_key, normalize_category, normalize_team
 from ..util import safe_float, safe_int
 from .session import HashtagPageError
 
@@ -107,6 +107,43 @@ def _pct_from_text(text: str) -> float:
 
 
 # ---------------------------------------------------------------------------
+HASHTAG_PCT_SCALE = 40.0
+HASHTAG_PROB_MIN, HASHTAG_PROB_MAX = 0.05, 0.95
+
+
+def hashtag_probability(my: Mapping[str, float], opp: Mapping[str, float]) -> tuple[dict[str, float], str]:
+    """The planner's own PROBABILITY row, ported from the page's inline JavaScript.
+
+    Counting stats: my / (my + opp). Percentages: 0.5 + (difference in percentage points) / 40.
+    Turnovers swap sides. Clamped to [0.05, 0.95]. Returns the per-category odds and the "W-L" record.
+    """
+    probs: dict[str, float] = {}
+    wins = losses = 0
+    for cat in ALL_CATEGORIES:
+        a, b = float(my.get(cat, 0.0)), float(opp.get(cat, 0.0))
+        if cat == "TO":
+            a, b = b, a
+        if a == 0 and b == 0:
+            p = 0.5
+        elif cat in PERCENT_CATEGORIES:
+            pa = a * 100 if a < 1 else a
+            pb = b * 100 if b < 1 else b
+            p = 0.5 + (pa - pb) / HASHTAG_PCT_SCALE
+        elif b == 0:
+            p = HASHTAG_PROB_MAX
+        elif a == 0:
+            p = HASHTAG_PROB_MIN
+        else:
+            p = a / (a + b)
+        p = max(HASHTAG_PROB_MIN, min(HASHTAG_PROB_MAX, p))
+        probs[cat] = p
+        if p > 0.5:
+            wins += 1
+        elif p < 0.5:
+            losses += 1
+    return probs, f"{wins}-{losses}"
+
+
 def parse_planner(html: str) -> dict[str, Any]:
     soup = _soup(html)
     stats_table = soup.find("table", id="statsTable")
@@ -141,6 +178,9 @@ def parse_planner(html: str) -> dict[str, Any]:
             team_order.append(team)
     if len(team_order) < 2:
         raise HashtagPageError("planner: expected two teams in the BEFORE block")
+    if not prob and all(t in after for t in team_order[:2]):
+        # The row is rendered by the page's JavaScript; compute it the same way.
+        prob, record = hashtag_probability(after[team_order[0]], after[team_order[1]])
 
     selects = {s.get("name", "").split("$")[-1]: s for s in soup.find_all("select")}
 

@@ -83,3 +83,11 @@ def test_form_state_from_planner():
     assert state.fields["ctl00$ContentPlaceHolder1$Repeater2$ctl13$CBSUN"] == "on"
     assert "ctl00$ContentPlaceHolder1$Repeater2$ctl01$CBTHU" not in state.fields   # unchecked boxes are not submitted
     assert state.fields["__VIEWSTATE"] == "TRUNCATED"
+
+
+def test_hashtag_probability_formula_matches_recorded_row(planner):
+    my, opp = planner["team_order"]
+    probs, record = parsers.hashtag_probability(planner["after"][my], planner["after"][opp])
+    assert record == planner["record"] == "6-3"
+    for cat, p in probs.items():
+        assert round(p, 2) == planner["prob"][cat], cat

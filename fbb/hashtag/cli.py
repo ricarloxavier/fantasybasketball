@@ -11,6 +11,7 @@ from ..cache import TTLCache
 from ..config import Settings
 from ..schedule import NbaSchedule
 from ..util import today_in_tz
+from .decision import DecisionWeights as _DW
 
 log = logging.getLogger(__name__)
 
@@ -150,7 +151,8 @@ def _print_report(rep: dict[str, Any]) -> None:
         exact = c.get("exact")
         exact_txt = ""
         if isinstance(exact, dict):
-            exact_txt = f" · Hashtag exact {exact['hashtag_record']} ({exact['delta_pts']:+.1f} pts)"
+            dp = exact.get("delta_pts")
+            exact_txt = f" · Hashtag exact {exact['hashtag_record']}" + (f" ({dp:+.1f} pts)" if dp is not None else "")
         elif exact:
             exact_txt = f" · exact: {exact}"
         notes = "; ".join(n[:60] for n in c["notes"])
@@ -186,9 +188,9 @@ def add_subcommands(sub: argparse._SubParsersAction) -> None:
     dr.add_argument("--top", type=int, default=8)
     dr.add_argument("--pool", type=int, default=200, help="free agents considered")
     dr.add_argument("--punt", action="append")
-    dr.add_argument("--w0", type=float, default=1.0, help="weight per win-probability point this week")
-    dr.add_argument("--w1", type=float, default=2.0, help="points per z-unit per game next week")
-    dr.add_argument("--wros", type=float, default=3.0, help="points per z-unit of rest-of-season per-game value")
+    dr.add_argument("--w0", type=float, default=_DW.this_week, help="weight per win-probability point this week")
+    dr.add_argument("--w1", type=float, default=_DW.next_week, help="points per z-unit per game next week")
+    dr.add_argument("--wros", type=float, default=_DW.ros, help="points per z-unit of rest-of-season per-game value")
     dr.add_argument("--exact", type=int, nargs="?", const=3, default=0, help="verify the top N with Hashtag's own planner (postbacks)")
     dr.add_argument("--no-recent", action="store_true", help="skip the recent-form (STREAM14) minutes adjustment")
     dr.add_argument("--no-yahoo", action="store_true", help="skip the Yahoo status/free-agent cross-check")
