@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Putilla Awards{% endblock %}
+{% block heading %}🏆 Los Putilla Awards{% endblock %}
+{% block subheading %}<span id="generated-at">Loading…</span>{% endblock %}
+{% block content %}
+    <section class="panel controls">
+        <div class="run-row">
+            <button class="run-btn" id="refreshBtn" type="button">Recalculate from Yahoo</button>
+            <div class="status" id="status">Loading awards…</div>
+        </div>
+        <div class="muted">A <strong>putilla</strong> is a player dropped at least twice in the league. Team awards count the weeks each team spent with putillas rostered; player awards rank the pickups themselves. Results are cached for a few hours; recalculate after a busy waiver day.</div>
+    </section>
+
+    <section class="panel results" id="awardsPanel" style="display:none;">
+        <div class="section-title">Team Awards</div>
+        <div id="team-awards-grid" class="awards-grid"></div>
+        <div class="section-title">Player Awards</div>
+        <div id="player-awards-grid" class="awards-grid"></div>
+    </section>
+
+    <section class="panel results">
+        <div class="section-title">How the awards are computed</div>
+        <ul class="notes">
+            <li><strong>👑 Putilla Suprema / 🥈 de Plata / 🥉 de Bronce:</strong> most total weeks with putillas on the roster (1st, 2nd, 3rd).</li>
+            <li><strong>⚡ Putilla Más Activa:</strong> most distinct putillas rostered. <strong>💎 Putilla Fiel:</strong> fewest.</li>
+            <li><strong>🏠 El Putilla Housewife:</strong> most players added and never dropped by anyone.</li>
+            <li><strong>💰 La Putilla Escondida:</strong> best value per week (minimum 5 weeks). <strong>🌟 Putilla MVP:</strong> highest total value (minimum 10 weeks). <strong>🗑️ Putilla Basura:</strong> worst value per week (minimum 5 weeks, MVP excluded).</li>
+            <li><strong>Value:</strong> season stats prorated to the weeks on the roster, then PTS ×0.03, REB ×0.06, AST ×0.08, STL ×0.35, BLK ×0.35, 3PM ×0.12, TO ×−0.10; ×1.08 when strong in 4 categories, ×1.15 in 5 or more. Stints under 100 prorated points do not qualify.</li>
+        </ul>
+    </section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/awards.js') }}"></script>{% endblock %}

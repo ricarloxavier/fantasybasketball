@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Waiver Optimizer{% endblock %}
+{% block heading %}Waiver Win-Probability Optimizer{% endblock %}
+{% block subheading %}Evaluate add/drop moves for the current matchup using projected category odds.{% endblock %}
+{% block content %}
+    <section class="panel controls">
+        <div class="form-grid">
+            <div class="field">
+                <label for="teamKey">Team to analyze</label>
+                <select id="teamKey"><option value="">Loading teams…</option></select>
+            </div>
+            <div class="field"><label for="freeAgentPool">Free-agent pool</label><input id="freeAgentPool" type="number" min="25" max="250" value="120"></div>
+            <div class="field"><label for="dropCandidates">Drop candidates</label><input id="dropCandidates" type="number" min="1" max="8" value="4"></div>
+            <div class="field"><label for="maxResults">Results to show</label><input id="maxResults" type="number" min="5" max="50" value="20"></div>
+        </div>
+        <div class="field">
+            <label>Punt categories (optional)</label>
+            <div class="punt-grid" id="puntGrid"></div>
+        </div>
+        <div class="field">
+            <label>Roster</label>
+            <div id="rosterToggleList" class="roster-toggle-list empty">Run the analysis to load your roster.</div>
+            <div class="hint"><strong>Drop</strong> puts a player in manual drop mode; <strong>Never drop</strong> protects a player in auto mode.</div>
+        </div>
+        <div class="form-grid">
+            <div class="field"><label for="dropPlayerText">Extra manual drop names</label><input id="dropPlayerText" type="text" placeholder="Comma-separated names"></div>
+            <div class="field"><label for="neverDropText">Extra never-drop names</label><input id="neverDropText" type="text" placeholder="Comma-separated names or player keys"></div>
+        </div>
+        <details class="advanced" id="advancedPanel">
+            <summary>Advanced</summary>
+            <div class="advanced-grid">
+                <div class="field">
+                    <label for="projectionWindow">Projection window</label>
+                    <select id="projectionWindow">
+                        <option value="recent_2w">Last 2 weeks (recommended)</option>
+                        <option value="season">Full season</option>
+                    </select>
+                </div>
+                <label class="check-opt"><input type="checkbox" id="includeCurrentScore" checked><span>Use current score in win probability</span></label>
+                <label class="check-opt"><input type="checkbox" id="includeNewsContext" checked><span>Use latest status/news context</span></label>
+                <label class="check-opt"><input type="checkbox" id="includePercentOwnedGuard" checked><span>Protect high-owned players in auto drop</span></label>
+                <label class="check-opt"><input type="checkbox" id="respectUndroppable" checked><span>Respect Yahoo undroppable flag</span></label>
+                <div class="field"><label for="ownershipProtectThreshold">Ownership protection threshold (%)</label><input id="ownershipProtectThreshold" type="number" min="0" max="100" value="80"></div>
+            </div>
+            <div class="prefs-row">
+                <button type="button" class="prefs-btn" id="savePrefsBtn">Save defaults</button>
+                <button type="button" class="prefs-btn secondary" id="resetPrefsBtn">Reset defaults</button>
+                <div class="muted" id="prefsStatus">Preferences are saved to your account.</div>
+            </div>
+        </details>
+        <div class="run-row">
+            <button class="run-btn" id="runBtn" type="button">Run analysis</button>
+            <div class="status" id="status">Ready.</div>
+        </div>
+    </section>
+    <section class="panel results" id="summaryPanel" style="display:none;"></section>
+    <section class="panel results" id="dropsPanel" style="display:none;"></section>
+    <section class="panel results" id="recsPanel" style="display:none;"></section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/waiver.js') }}"></script>{% endblock %}

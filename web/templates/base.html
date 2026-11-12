@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Chantasy{% endblock %} · Chantasy League</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+    <div class="wrap">
+        <header class="panel top">
+            <div>
+                <h1>{% block heading %}Chantasy{% endblock %}</h1>
+                <div class="sub">{% block subheading %}{% endblock %}</div>
+            </div>
+            <nav class="links">
+                <a class="link-btn {% if active == 'awards' %}active{% endif %}" href="{{ url_for('awards.index') }}">Awards</a>
+                <a class="link-btn {% if active == 'waiver' %}active{% endif %}" href="{{ url_for('waiver.waiver_page') }}">Waiver</a>
+            </nav>
+        </header>
+        {% block content %}{% endblock %}
+        <footer class="footer">Chantasy league tools · data from Yahoo Fantasy</footer>
+    </div>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
