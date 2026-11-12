@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waiver Optimizer - Chantasy League</title>
+    <style>
+        :root {
+            --bg-1: #f7fbff;
+            --bg-2: #e7efff;
+            --ink: #1b2745;
+            --muted: #5c6b8a;
+            --panel: #ffffff;
+            --line: #d8e1f2;
+            --accent: #1d6df2;
+            --accent-strong: #0f57ce;
+            --good: #198754;
+            --warn: #b7791f;
+            --bad: #b42318;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--ink);
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 12% 15%, #dfe9ff 0, transparent 45%),
+                radial-gradient(circle at 88% 85%, #d9f7ef 0, transparent 40%),
+                linear-gradient(160deg, var(--bg-1), var(--bg-2));
+            padding: 24px;
+        }
+
+        .wrap {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: grid;
+            gap: 16px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(21, 47, 89, 0.08);
+            overflow: hidden;
+        }
+
+        .top {
+            padding: 20px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .top h1 {
+            font-size: 1.7rem;
+            letter-spacing: 0.2px;
+        }
+
+        .top .sub {
+            color: var(--muted);
+            font-size: 0.96rem;
+            margin-top: 4px;
+        }
+
+        .links {
+            display: flex;
+            gap: 10px;
+        }
+
+        .link-btn {
+            border: 1px solid var(--line);
+            background: #f8fbff;
+            color: var(--ink);
+            text-decoration: none;
+            padding: 9px 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .controls {
+            padding: 20px 24px;
+            display: grid;
+            gap: 16px;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .field input {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px 11px;
+            font-size: 0.95rem;
+            color: var(--ink);
+            background: #fcfeff;
+        }
+
+        .field select {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px 11px;
+            font-size: 0.92rem;
+            color: var(--ink);
+            background: #fcfeff;
+        }
+
+        .field .hint {
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .roster-toggle-list {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #f6f9ff;
+            max-height: 360px;
+            overflow: auto;
+            display: grid;
+            gap: 10px;
+            padding: 8px;
+        }
+
+        .roster-toggle-row {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            padding: 10px 12px;
+            display: grid;
+            gap: 10px;
+            grid-template-columns: minmax(320px, 1fr) auto;
+            align-items: center;
+        }
+
+        .roster-toggle-row:has(.drop-toggle:checked) {
+            border-color: #9fc2f9;
+            background: #f4f8ff;
+        }
+
+        .roster-toggle-row:has(.never-drop-toggle:checked) {
+            border-color: #f1b7b1;
+            background: #fff5f4;
+        }
+
+        .roster-toggle-name {
+            font-size: 0.88rem;
+            color: var(--ink);
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .roster-toggle-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .toggle-pill {
+            position: relative;
+            display: inline-flex;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-pill input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .toggle-pill span {
+            display: inline-block;
+            min-width: 104px;
+            text-align: center;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #4b6388;
+            border: 1px solid #c7d4ea;
+            border-radius: 999px;
+            background: #f5f8ff;
+            padding: 7px 12px;
+            transition: all 0.15s ease;
+        }
+
+        .toggle-pill:hover span {
+            border-color: #aebfdd;
+            background: #edf3ff;
+        }
+
+        .toggle-pill.drop input:checked + span {
+            border-color: #1d6df2;
+            background: linear-gradient(120deg, #1d6df2, #0f57ce);
+            color: #fff;
+        }
+
+        .toggle-pill.never input:checked + span {
+            border-color: #c9382c;
+            background: linear-gradient(120deg, #d64536, #b42318);
+            color: #fff;
+        }
+
+        .advanced {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #fbfdff;
+            padding: 10px 12px;
+        }
+
+        .advanced summary {
+            cursor: pointer;
+            font-weight: 700;
+            color: var(--ink);
+            list-style: none;
+        }
+
+        .advanced summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .advanced-grid {
+            margin-top: 12px;
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        }
+
+        .check-opt {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            padding: 9px 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .prefs-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .prefs-btn {
+            border: 1px solid var(--line);
+            background: #f4f8ff;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .prefs-btn.secondary {
+            background: #ffffff;
+        }
+
+        .punt-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 8px;
+        }
+
+        .punt-opt {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 7px 9px;
+            font-size: 0.85rem;
+            color: var(--ink);
+            background: #fbfdff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .run-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .run-btn {
+            border: 0;
+            background: linear-gradient(120deg, var(--accent), var(--accent-strong));
+            color: #fff;
+            font-weight: 700;
+            border-radius: 12px;
+            padding: 11px 16px;
+            cursor: pointer;
+        }
+
+        .run-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .status.error {
+            color: var(--bad);
+            font-weight: 600;
+        }
+
+        .summary {
+            padding: 20px 24px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .kpis {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .kpi {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #f9fcff;
+            padding: 14px;
+        }
+
+        .kpi .label {
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 6px;
+        }
+
+        .kpi .value {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: var(--ink);
+        }
+
+        .kpi .value.good {
+            color: var(--good);
+        }
+
+        .kpi .value.warn {
+            color: var(--warn);
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chip {
+            border-radius: 999px;
+            padding: 6px 10px;
+            border: 1px solid var(--line);
+            background: #f8fbff;
+            font-size: 0.85rem;
+        }
+
+        .chip.bad {
+            border-color: #f3b9b4;
+            background: #fff5f4;
+            color: #7f1f15;
+        }
+
+        .chip.good {
+            border-color: #a7dfc7;
+            background: #eefcf4;
+            color: #145f39;
+        }
+
+        .cat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+        }
+
+        .cat {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px;
+            background: #fff;
+        }
+
+        .cat h4 {
+            font-size: 0.86rem;
+            margin-bottom: 6px;
+        }
+
+        .cat .prob {
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .cat .prob.good {
+            color: var(--good);
+        }
+
+        .cat .prob.bad {
+            color: var(--bad);
+        }
+
+        .cat .line {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .drops {
+            padding: 20px 24px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .drop-list {
+            display: grid;
+            gap: 9px;
+        }
+
+        .drop-item {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fcfdff;
+            padding: 10px 12px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .drop-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .drop-meta {
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .recs {
+            padding: 20px 24px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 940px;
+            background: #fff;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 10px 11px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: #f4f8ff;
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .delta {
+            font-weight: 800;
+        }
+
+        .delta.up {
+            color: var(--good);
+        }
+
+        .delta.down {
+            color: var(--bad);
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .empty {
+            padding: 16px;
+            border: 1px dashed var(--line);
+            border-radius: 10px;
+            color: var(--muted);
+            background: #fcfdff;
+        }
+
+        @media (max-width: 720px) {
+            body {
+                padding: 14px;
+            }
+
+            .top,
+            .controls,
+            .summary,
+            .drops,
+            .recs {
+                padding: 16px;
+            }
+
+            .roster-toggle-row {
+                grid-template-columns: 1fr;
+            }
+
+            .roster-toggle-actions {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <section class="panel top">
+            <div>
+                <h1>Waiver Win-Probability Optimizer</h1>
+                <div class="sub">Evaluate add/drop moves for your current matchup using projected category odds.</div>
+            </div>
+            <div class="links">
+                <a class="link-btn" href="/">Awards</a>
+                <a class="link-btn" href="/waiver">Waiver</a>
+            </div>
+        </section>
+
+        <section class="panel controls">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="teamKey">Team To Analyze</label>
+                    <select id="teamKey">
+                        <option value="">Loading teams...</option>
+                    </select>
+                    <div class="hint">Choose any team in your league.</div>
+                </div>
+                <div class="field">
+                    <label for="freeAgentPool">Free-Agent Pool Size</label>
+                    <input id="freeAgentPool" type="number" min="25" max="250" value="120">
+                </div>
+                <div class="field">
+                    <label for="dropCandidates">Drop Candidates</label>
+                    <input id="dropCandidates" type="number" min="1" max="8" value="4">
+                </div>
+                <div class="field">
+                    <label for="maxResults">Results To Show</label>
+                    <input id="maxResults" type="number" min="5" max="50" value="20">
+                </div>
+            </div>
+
+            <div>
+                <div class="field"><label>Punt Categories (optional)</label></div>
+                <div class="punt-grid" id="puntGrid"></div>
+            </div>
+
+            <div class="field">
+                <label>Roster Player Toggles</label>
+                <div id="rosterToggleList" class="roster-toggle-list empty">
+                    Run analysis to load your latest roster.
+                </div>
+                <div class="hint">Click <strong>Drop</strong> to include a player in manual drop mode. Click <strong>Never Drop</strong> to protect a player in auto mode. A player cannot be both.</div>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="dropPlayerText">Extra Manual Drop Names (optional)</label>
+                    <input id="dropPlayerText" type="text" placeholder="Comma-separated names, e.g. Andrew Nembhard">
+                </div>
+                <div class="field">
+                    <label for="neverDropText">Extra Never-Drop Names (optional)</label>
+                    <input id="neverDropText" type="text" placeholder="Comma-separated names or player keys">
+                </div>
+            </div>
+
+            <details class="advanced" id="advancedPanel">
+                <summary>Advanced Controls And Memory</summary>
+                <div class="advanced-grid">
+                    <div class="field">
+                        <label for="projectionWindow">Projection Window</label>
+                        <select id="projectionWindow">
+                            <option value="recent_2w">Last 2 Weeks (Recommended)</option>
+                            <option value="season">Full Season</option>
+                        </select>
+                    </div>
+                    <label class="check-opt">
+                        <input type="checkbox" id="includeCurrentScore" checked>
+                        <span>Use current score in win probability</span>
+                    </label>
+                    <label class="check-opt">
+                        <input type="checkbox" id="includeNewsContext" checked>
+                        <span>Use latest status/news context</span>
+                    </label>
+                    <label class="check-opt">
+                        <input type="checkbox" id="includePercentOwnedGuard" checked>
+                        <span>Protect high-owned players in auto drop</span>
+                    </label>
+                    <label class="check-opt">
+                        <input type="checkbox" id="respectUndroppable" checked>
+                        <span>Respect Yahoo undroppable flag</span>
+                    </label>
+                    <div class="field">
+                        <label for="ownershipProtectThreshold">Ownership Protection Threshold (%)</label>
+                        <input id="ownershipProtectThreshold" type="number" min="0" max="100" value="80">
+                        <div class="hint">Auto-drop treats players at or above this ownership as harder to drop.</div>
+                    </div>
+                </div>
+                <div class="prefs-row">
+                    <button type="button" class="prefs-btn" id="savePrefsBtn">Save Defaults</button>
+                    <button type="button" class="prefs-btn secondary" id="resetPrefsBtn">Reset Defaults</button>
+                    <div class="muted" id="prefsStatus">Preferences load automatically for your account.</div>
+                </div>
+            </details>
+
+            <div class="run-row">
+                <button class="run-btn" id="runBtn">Run Analysis</button>
+                <div class="status" id="status">Ready.</div>
+            </div>
+        </section>
+
+        <section class="panel summary" id="summaryPanel" style="display:none;"></section>
+        <section class="panel drops" id="dropsPanel" style="display:none;"></section>
+        <section class="panel recs" id="recsPanel" style="display:none;"></section>
+    </div>
+
+    <script>
+        const CATEGORIES = ["FG%", "FT%", "3PTM", "PTS", "REB", "AST", "ST", "BLK", "TO"];
+        const LOCAL_PREFS_KEY = "waiver_prefs_v1";
+        const DEFAULT_PREFS = {
+            selected_team_key: "",
+            projection_window: "recent_2w",
+            free_agent_pool: 120,
+            drop_candidates: 4,
+            max_results: 20,
+            punt_categories: [],
+            selected_drop_players: [],
+            selected_never_drop_players: [],
+            drop_player_text: "",
+            never_drop_text: "",
+            include_current_score: true,
+            include_news_context: true,
+            include_percent_owned_guard: true,
+            respect_undroppable: true,
+            ownership_protect_threshold: 80
+        };
+
+        const summaryPanel = document.getElementById("summaryPanel");
+        const dropsPanel = document.getElementById("dropsPanel");
+        const recsPanel = document.getElementById("recsPanel");
+        const runBtn = document.getElementById("runBtn");
+        const statusEl = document.getElementById("status");
+        const prefsStatusEl = document.getElementById("prefsStatus");
+        const savePrefsBtn = document.getElementById("savePrefsBtn");
+        const resetPrefsBtn = document.getElementById("resetPrefsBtn");
+
+        const teamKeySelect = document.getElementById("teamKey");
+        const projectionWindowInput = document.getElementById("projectionWindow");
+        const freeAgentPoolInput = document.getElementById("freeAgentPool");
+        const dropCandidatesInput = document.getElementById("dropCandidates");
+        const maxResultsInput = document.getElementById("maxResults");
+        const rosterToggleList = document.getElementById("rosterToggleList");
+        const dropPlayerText = document.getElementById("dropPlayerText");
+        const neverDropText = document.getElementById("neverDropText");
+        const includeCurrentScoreInput = document.getElementById("includeCurrentScore");
+        const includeNewsContextInput = document.getElementById("includeNewsContext");
+        const includePercentOwnedGuardInput = document.getElementById("includePercentOwnedGuard");
+        const respectUndroppableInput = document.getElementById("respectUndroppable");
+        const ownershipProtectThresholdInput = document.getElementById("ownershipProtectThreshold");
+
+        let pendingTeamKey = "";
+        let pendingDropSelections = [];
+        let pendingNeverDropSelections = [];
+
+        function clampInt(value, fallback, min, max) {
+            const parsed = Number.parseInt(value, 10);
+            if (Number.isNaN(parsed)) return fallback;
+            return Math.max(min, Math.min(max, parsed));
+        }
+
+        function parseBool(value, fallback = false) {
+            if (typeof value === "boolean") return value;
+            if (value === null || value === undefined) return fallback;
+            return ["1", "true", "yes", "y", "on"].includes(String(value).trim().toLowerCase());
+        }
+
+        function splitCsv(text) {
+            return String(text || "")
+                .split(",")
+                .map(v => v.trim())
+                .filter(Boolean);
+        }
+
+        function uniqueStrings(values) {
+            const out = [];
+            const seen = new Set();
+            (Array.isArray(values) ? values : []).forEach(raw => {
+                const value = String(raw || "").trim();
+                if (!value || seen.has(value)) return;
+                seen.add(value);
+                out.push(value);
+            });
+            return out;
+        }
+
+        function normalizePrefs(rawPrefs) {
+            const raw = rawPrefs && typeof rawPrefs === "object" ? rawPrefs : {};
+            return {
+                selected_team_key: String(raw.selected_team_key || "").trim().slice(0, 80),
+                projection_window: ["recent_2w", "season"].includes(String(raw.projection_window || "").trim().toLowerCase())
+                    ? String(raw.projection_window || "").trim().toLowerCase()
+                    : "recent_2w",
+                free_agent_pool: clampInt(raw.free_agent_pool, DEFAULT_PREFS.free_agent_pool, 25, 250),
+                drop_candidates: clampInt(raw.drop_candidates, DEFAULT_PREFS.drop_candidates, 1, 8),
+                max_results: clampInt(raw.max_results, DEFAULT_PREFS.max_results, 5, 50),
+                punt_categories: uniqueStrings(raw.punt_categories || []).filter(cat => CATEGORIES.includes(cat)),
+                selected_drop_players: uniqueStrings(raw.selected_drop_players || []).slice(0, 40),
+                selected_never_drop_players: uniqueStrings(raw.selected_never_drop_players || []).slice(0, 40),
+                drop_player_text: String(raw.drop_player_text || "").slice(0, 300),
+                never_drop_text: String(raw.never_drop_text || "").slice(0, 300),
+                include_current_score: parseBool(raw.include_current_score, DEFAULT_PREFS.include_current_score),
+                include_news_context: parseBool(raw.include_news_context, DEFAULT_PREFS.include_news_context),
+                include_percent_owned_guard: parseBool(raw.include_percent_owned_guard, DEFAULT_PREFS.include_percent_owned_guard),
+                respect_undroppable: parseBool(raw.respect_undroppable, DEFAULT_PREFS.respect_undroppable),
+                ownership_protect_threshold: clampInt(
+                    raw.ownership_protect_threshold,
+                    DEFAULT_PREFS.ownership_protect_threshold,
+                    0,
+                    100
+                )
+            };
+        }
+
+        function selectedPunts() {
+            const checked = [...document.querySelectorAll(".punt-opt input:checked")];
+            return checked.map(input => input.value);
+        }
+
+        function setPuntSelections(puntCategories) {
+            const wanted = new Set(uniqueStrings(puntCategories));
+            [...document.querySelectorAll(".punt-opt input")].forEach(input => {
+                input.checked = wanted.has(input.value);
+            });
+        }
+
+        function escapeHtml(text) {
+            return String(text || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        function renderTeamOptions(teamRows = [], selectedTeamKey = "") {
+            if (!Array.isArray(teamRows) || teamRows.length === 0) {
+                teamKeySelect.innerHTML = `<option value="${escapeHtml(pendingTeamKey || "")}">Default team</option>`;
+                if (pendingTeamKey) {
+                    teamKeySelect.value = pendingTeamKey;
+                }
+                return;
+            }
+
+            teamKeySelect.innerHTML = teamRows.map(row => {
+                const key = String(row.team_key || "");
+                const name = String(row.team_name || key || "Unknown Team");
+                return `<option value="${escapeHtml(key)}">${escapeHtml(name)}</option>`;
+            }).join("");
+
+            const preferred =
+                String(selectedTeamKey || "").trim() ||
+                String(pendingTeamKey || "").trim();
+
+            if (preferred) {
+                teamKeySelect.value = preferred;
+            }
+            if (!teamKeySelect.value && teamKeySelect.options.length) {
+                teamKeySelect.selectedIndex = 0;
+            }
+            pendingTeamKey = teamKeySelect.value || "";
+        }
+
+        async function loadTeamOptions(preferredTeamKey = "") {
+            const params = new URLSearchParams();
+            const desired = String(preferredTeamKey || pendingTeamKey || "").trim();
+            if (desired) {
+                params.set("team_key", desired);
+            }
+
+            const url = params.toString()
+                ? `/api/waiver/teams?${params.toString()}`
+                : "/api/waiver/teams";
+            try {
+                const resp = await fetch(url);
+                const payload = await resp.json();
+                if (resp.ok && payload.success && payload.data) {
+                    renderTeamOptions(
+                        payload.data.teams || [],
+                        payload.data.selected_team_key || desired
+                    );
+                    return true;
+                }
+            } catch (err) {
+                // Keep last selection as fallback.
+            }
+            renderTeamOptions([], desired);
+            return false;
+        }
+
+        function getToggleSelections(kind) {
+            const cls = kind === "drop" ? ".drop-toggle:checked" : ".never-drop-toggle:checked";
+            return [...rosterToggleList.querySelectorAll(cls)]
+                .map(cb => cb.dataset.playerKey || "")
+                .filter(Boolean);
+        }
+
+        function hasRosterToggleRows() {
+            return rosterToggleList.querySelectorAll(".roster-toggle-row").length > 0;
+        }
+
+        function currentToggleOrPending(kind, pendingValues) {
+            const selected = getToggleSelections(kind);
+            if (selected.length) {
+                return selected;
+            }
+            return hasRosterToggleRows() ? [] : pendingValues.slice();
+        }
+
+        function applyPendingSelectionsToToggles() {
+            if (!hasRosterToggleRows()) {
+                return;
+            }
+
+            const dropSet = new Set(pendingDropSelections);
+            const neverSet = new Set(pendingNeverDropSelections);
+
+            rosterToggleList.querySelectorAll(".roster-toggle-row").forEach(row => {
+                const key = row.dataset.playerKey || "";
+                const dropCb = row.querySelector(".drop-toggle");
+                const neverCb = row.querySelector(".never-drop-toggle");
+                if (!dropCb || !neverCb) {
+                    return;
+                }
+
+                const dropChecked = dropSet.has(key);
+                const neverChecked = !dropChecked && neverSet.has(key);
+                dropCb.checked = dropChecked;
+                neverCb.checked = neverChecked;
+            });
+        }
+
+        function syncPendingSelectionsFromToggles() {
+            pendingDropSelections = getToggleSelections("drop");
+            pendingNeverDropSelections = getToggleSelections("never");
+        }
+
+        function fmtPct(p, digits = 1) {
+            return `${(p * 100).toFixed(digits)}%`;
+        }
+
+        function fmtVal(cat, val) {
+            if (cat === "FG%" || cat === "FT%") {
+                return Number(val).toFixed(3);
+            }
+            return Number(val).toFixed(1);
+        }
+
+        function deltaClass(v) {
+            if (v > 0) return "up";
+            if (v < 0) return "down";
+            return "";
+        }
+
+        function setStatus(msg, error = false) {
+            statusEl.textContent = msg;
+            statusEl.className = error ? "status error" : "status";
+        }
+
+        function setPrefsStatus(msg, error = false) {
+            prefsStatusEl.textContent = msg;
+            prefsStatusEl.className = error ? "status error" : "muted";
+        }
+
+        function renderPuntOptions() {
+            const puntGrid = document.getElementById("puntGrid");
+            puntGrid.innerHTML = CATEGORIES.map(cat => `
+                <label class="punt-opt">
+                    <input type="checkbox" value="${cat}">
+                    <span>${cat}</span>
+                </label>
+            `).join("");
+        }
+
+        function rosterOptionText(p) {
+            const pct = Number(p.percent_owned || 0).toFixed(1);
+            const und = p.is_undroppable ? " | UNDROPPABLE" : "";
+            const news = p.news ? ` | ${p.news}` : "";
+            return escapeHtml(`${p.name} (${p.team || "-"} ${p.position || "-"}) | ${pct}% owned${und}${news}`);
+        }
+
+        function renderRosterToggles(roster = [], preserveSelection = true) {
+            const selectedDrop = new Set();
+            const selectedNeverDrop = new Set();
+
+            if (preserveSelection) {
+                getToggleSelections("drop").forEach(v => selectedDrop.add(v));
+                getToggleSelections("never").forEach(v => selectedNeverDrop.add(v));
+            }
+            pendingDropSelections.forEach(v => selectedDrop.add(v));
+            pendingNeverDropSelections.forEach(v => selectedNeverDrop.add(v));
+
+            if (!roster.length) {
+                rosterToggleList.className = "roster-toggle-list empty";
+                rosterToggleList.textContent = "Run analysis to load your latest roster.";
+                return;
+            }
+
+            rosterToggleList.className = "roster-toggle-list";
+            rosterToggleList.innerHTML = roster.map(p => {
+                const playerKey = p.player_key;
+                const dropChecked = selectedDrop.has(playerKey);
+                const neverChecked = !dropChecked && selectedNeverDrop.has(playerKey);
+                return `
+                    <div class="roster-toggle-row" data-player-key="${playerKey}">
+                        <div class="roster-toggle-name">${rosterOptionText(p)}</div>
+                        <div class="roster-toggle-actions">
+                            <label class="toggle-pill drop">
+                                <input type="checkbox" class="drop-toggle" data-player-key="${playerKey}" ${dropChecked ? "checked" : ""}>
+                                <span>Drop</span>
+                            </label>
+                            <label class="toggle-pill never">
+                                <input type="checkbox" class="never-drop-toggle" data-player-key="${playerKey}" ${neverChecked ? "checked" : ""}>
+                                <span>Never Drop</span>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            rosterToggleList.querySelectorAll(".roster-toggle-row").forEach(row => {
+                const dropCb = row.querySelector(".drop-toggle");
+                const neverCb = row.querySelector(".never-drop-toggle");
+                if (!dropCb || !neverCb) {
+                    return;
+                }
+
+                dropCb.addEventListener("change", () => {
+                    if (dropCb.checked) {
+                        neverCb.checked = false;
+                    }
+                    syncPendingSelectionsFromToggles();
+                });
+                neverCb.addEventListener("change", () => {
+                    if (neverCb.checked) {
+                        dropCb.checked = false;
+                    }
+                    syncPendingSelectionsFromToggles();
+                });
+            });
+
+            syncPendingSelectionsFromToggles();
+        }
+
+        function collectPreferencesFromControls() {
+            const selectedDropPlayers = currentToggleOrPending("drop", pendingDropSelections);
+            const selectedNeverDropPlayers = currentToggleOrPending("never", pendingNeverDropSelections);
+            const selectedTeamKey = String(teamKeySelect.value || pendingTeamKey || "").trim();
+            const prefs = normalizePrefs({
+                selected_team_key: selectedTeamKey,
+                projection_window: projectionWindowInput.value,
+                free_agent_pool: freeAgentPoolInput.value,
+                drop_candidates: dropCandidatesInput.value,
+                max_results: maxResultsInput.value,
+                punt_categories: selectedPunts(),
+                selected_drop_players: selectedDropPlayers,
+                selected_never_drop_players: selectedNeverDropPlayers,
+                drop_player_text: dropPlayerText.value,
+                never_drop_text: neverDropText.value,
+                include_current_score: includeCurrentScoreInput.checked,
+                include_news_context: includeNewsContextInput.checked,
+                include_percent_owned_guard: includePercentOwnedGuardInput.checked,
+                respect_undroppable: respectUndroppableInput.checked,
+                ownership_protect_threshold: ownershipProtectThresholdInput.value
+            });
+            pendingTeamKey = prefs.selected_team_key || "";
+            pendingDropSelections = prefs.selected_drop_players.slice();
+            pendingNeverDropSelections = prefs.selected_never_drop_players.slice();
+            return prefs;
+        }
+
+        function applyPreferencesToControls(rawPrefs) {
+            const prefs = normalizePrefs(rawPrefs || DEFAULT_PREFS);
+
+            pendingTeamKey = prefs.selected_team_key || "";
+            if (teamKeySelect.options.length) {
+                teamKeySelect.value = pendingTeamKey;
+            }
+            projectionWindowInput.value = prefs.projection_window;
+            freeAgentPoolInput.value = prefs.free_agent_pool;
+            dropCandidatesInput.value = prefs.drop_candidates;
+            maxResultsInput.value = prefs.max_results;
+            setPuntSelections(prefs.punt_categories);
+
+            dropPlayerText.value = prefs.drop_player_text;
+            neverDropText.value = prefs.never_drop_text;
+
+            includeCurrentScoreInput.checked = prefs.include_current_score;
+            includeNewsContextInput.checked = prefs.include_news_context;
+            includePercentOwnedGuardInput.checked = prefs.include_percent_owned_guard;
+            respectUndroppableInput.checked = prefs.respect_undroppable;
+            ownershipProtectThresholdInput.value = prefs.ownership_protect_threshold;
+
+            pendingDropSelections = prefs.selected_drop_players.slice();
+            pendingNeverDropSelections = prefs.selected_never_drop_players.slice();
+            applyPendingSelectionsToToggles();
+            syncPendingSelectionsFromToggles();
+        }
+
+        async function savePreferences(showStatusMessage = true) {
+            const prefs = collectPreferencesFromControls();
+            let savedRemote = false;
+
+            try {
+                const resp = await fetch("/api/waiver/preferences", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(prefs)
+                });
+                const payload = await resp.json();
+                if (resp.ok && payload.success && payload.data) {
+                    applyPreferencesToControls(payload.data);
+                    savedRemote = true;
+                }
+            } catch (err) {
+                savedRemote = false;
+            }
+
+            try {
+                localStorage.setItem(LOCAL_PREFS_KEY, JSON.stringify(prefs));
+            } catch (err) {
+                // Ignore local storage write issues.
+            }
+
+            if (showStatusMessage) {
+                if (savedRemote) {
+                    setPrefsStatus("Saved defaults to your account memory.");
+                } else {
+                    setPrefsStatus("Saved defaults locally in this browser only.", false);
+                }
+            }
+            return prefs;
+        }
+
+        async function loadPreferences() {
+            let loaded = null;
+            let source = "defaults";
+
+            try {
+                const resp = await fetch("/api/waiver/preferences");
+                const payload = await resp.json();
+                if (resp.ok && payload.success && payload.data) {
+                    loaded = payload.data;
+                    source = "account";
+                }
+            } catch (err) {
+                loaded = null;
+            }
+
+            if (!loaded) {
+                try {
+                    const raw = localStorage.getItem(LOCAL_PREFS_KEY);
+                    if (raw) {
+                        loaded = JSON.parse(raw);
+                        source = "browser";
+                    }
+                } catch (err) {
+                    loaded = null;
+                }
+            }
+
+            applyPreferencesToControls(loaded || DEFAULT_PREFS);
+
+            if (source === "account") {
+                setPrefsStatus("Loaded saved defaults from your account.");
+            } else if (source === "browser") {
+                setPrefsStatus("Loaded saved defaults from this browser.");
+            } else {
+                setPrefsStatus("Using defaults. Click Save Defaults to remember settings.");
+            }
+        }
+
+        async function resetPreferences() {
+            applyPreferencesToControls(DEFAULT_PREFS);
+            await savePreferences(true);
+        }
+
+        function renderSummary(data) {
+            const baseline = data.baseline;
+            const current = data.current_score || { categories: {}, deterministic_score: { wins: 0, losses: 0, ties: 0 } };
+            const remaining = data.remaining_schedule || { rows: [] };
+            const wp = baseline.win_probability;
+            const wpClass = wp >= 0.55 ? "good" : wp >= 0.45 ? "warn" : "";
+
+            const weaknessChips = baseline.my_weaknesses.length
+                ? baseline.my_weaknesses.map(cat => `<span class="chip bad">${cat}</span>`).join("")
+                : `<span class="chip good">No clear weaknesses</span>`;
+
+            const score = `${baseline.deterministic_score.wins}-${baseline.deterministic_score.losses}`;
+            const currentScore = `${current.deterministic_score.wins}-${current.deterministic_score.losses}-${current.deterministic_score.ties}`;
+            const projectionNote = data.projection_basis === "current_score_plus_remaining_games"
+                ? "Win probability uses current score + remaining games."
+                : "Win probability uses remaining games only.";
+            const windowUsed = (data.projection_window_used || data.settings?.projection_window_used || "season").toLowerCase();
+            const windowLabel = windowUsed === "recent_2w" ? "Last 2 Weeks" : "Full Season";
+            const dropMode = (data.settings && data.settings.drop_mode) || "auto";
+
+            summaryPanel.innerHTML = `
+                <div class="kpis">
+                    <div class="kpi">
+                        <div class="label">Matchup</div>
+                        <div class="value">${data.my_team_name} vs ${data.opponent_team_name}</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="label">Baseline Win Probability</div>
+                        <div class="value ${wpClass}">${fmtPct(wp, 1)}</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="label">Deterministic Category Score</div>
+                        <div class="value">${score}</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="label">Current Category Score</div>
+                        <div class="value">${currentScore}</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="label">Week / Date Range</div>
+                        <div class="value">W${data.current_week}</div>
+                        <div class="muted">${data.week_start} to ${data.week_end}</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="label">Days Remaining</div>
+                        <div class="value">${data.days_remaining}</div>
+                        <div class="muted">Games source: ${data.games_source}</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="label">Drop Mode</div>
+                        <div class="value">${dropMode.toUpperCase()}</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="label">Projection Window</div>
+                        <div class="value">${windowLabel}</div>
+                    </div>
+                </div>
+
+                <div class="muted">${projectionNote}</div>
+
+                <div>
+                    <div class="section-title">Weak Categories To Attack</div>
+                    <div class="chips">${weaknessChips}</div>
+                </div>
+
+                <div>
+                    <div class="section-title">Baseline Category Win Odds</div>
+                    <div class="cat-grid">
+                        ${CATEGORIES.map(cat => {
+                            const c = baseline.categories[cat];
+                            const cls = c.prob_you_win >= 0.5 ? "good" : "bad";
+                            return `
+                                <div class="cat">
+                                    <h4>${cat}${c.is_punt ? " (punt)" : ""}</h4>
+                                    <div class="prob ${cls}">${fmtPct(c.prob_you_win, 0)}</div>
+                                    <div class="line">You: ${fmtVal(cat, c.my_value)}</div>
+                                    <div class="line">Opp: ${fmtVal(cat, c.opp_value)}</div>
+                                </div>
+                            `;
+                        }).join("")}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="section-title">Current Score By Category</div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>You (Current)</th>
+                                    <th>Opponent (Current)</th>
+                                    <th>Leader</th>
+                                    <th>Margin</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${CATEGORIES.map(cat => {
+                                    const c = current.categories[cat] || { my_value: 0, opp_value: 0, margin: 0, winner: "-" };
+                                    const margin = (cat === "FG%" || cat === "FT%") ? Number(c.margin).toFixed(3) : Number(c.margin).toFixed(1);
+                                    return `
+                                        <tr>
+                                            <td>${cat}${c.is_punt ? " (punt)" : ""}</td>
+                                            <td>${fmtVal(cat, c.my_value)}</td>
+                                            <td>${fmtVal(cat, c.opp_value)}</td>
+                                            <td>${c.winner}</td>
+                                            <td>${margin}</td>
+                                        </tr>
+                                    `;
+                                }).join("")}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="section-title">Remaining Days And Players Left</div>
+                    ${remaining.rows && remaining.rows.length ? `
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>${data.my_team_name} (Players)</th>
+                                        <th>${data.opponent_team_name} (Players)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${remaining.rows.map(row => `
+                                        <tr>
+                                            <td>${row.date}</td>
+                                            <td>${row.my_count} | ${(row.my_players || []).join(", ") || "-"}</td>
+                                            <td>${row.opp_count} | ${(row.opp_players || []).join(", ") || "-"}</td>
+                                        </tr>
+                                    `).join("")}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : `
+                        <div class="empty">Schedule detail unavailable from source (${remaining.source || "unknown"}).</div>
+                    `}
+                </div>
+            `;
+            summaryPanel.style.display = "grid";
+        }
+
+        function renderDrops(data) {
+            const drops = data.drop_candidates || [];
+            dropsPanel.innerHTML = `
+                <div class="section-title">Likely Drop Candidates Evaluated</div>
+                ${drops.length === 0 ? `<div class="empty">No drop candidates available.</div>` : `
+                    <div class="drop-list">
+                        ${drops.map((d, idx) => `
+                            <div class="drop-item">
+                                <div>
+                                    <div class="drop-name">${idx + 1}. ${d.name}</div>
+                                    <div class="drop-meta">${d.team || "-"} | ${d.position || "-"} | Status: ${d.status || "OK"} | ${Number(d.percent_owned || 0).toFixed(1)}% owned | Games left: ${d.games_remaining}${d.is_undroppable ? " | UNDROPPABLE" : ""}</div>
+                                    ${d.news ? `<div class="drop-meta">${d.news}</div>` : ""}
+                                </div>
+                                <div class="drop-meta">Drop score: ${d.drop_score}</div>
+                            </div>
+                        `).join("")}
+                    </div>
+                `}
+            `;
+            dropsPanel.style.display = "grid";
+        }
+
+        function renderRecommendations(data) {
+            const recs = data.recommendations || [];
+            if (!recs.length) {
+                recsPanel.innerHTML = `
+                    <div class="section-title">Top Add/Drop Recommendations</div>
+                    <div class="empty">No positive-signal recommendations returned for this configuration.</div>
+                `;
+                recsPanel.style.display = "grid";
+                return;
+            }
+
+            recsPanel.innerHTML = `
+                <div class="section-title">Top Add/Drop Recommendations</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Add</th>
+                                <th>Drop</th>
+                                <th>Delta Win %</th>
+                                <th>New Win %</th>
+                                <th>Flip Cats</th>
+                                <th>Main Gains</th>
+                                <th>Pickup News</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${recs.map(rec => {
+                                const delta = rec.delta_win_probability;
+                                const keyDeltas = (rec.category_deltas || [])
+                                    .slice(0, 2)
+                                    .map(row => `${row.category} ${row.delta_prob >= 0 ? "+" : ""}${fmtPct(row.delta_prob, 0)}`)
+                                    .join(" | ");
+                                return `
+                                    <tr>
+                                        <td>${rec.rank}</td>
+                                        <td>
+                                            <strong>${rec.pickup_player}</strong><br>
+                                            <span class="muted">${rec.pickup_team || "-"} | ${rec.pickup_position || "-"} | ${rec.pickup_games_remaining} games left</span>
+                                        </td>
+                                        <td>
+                                            <strong>${rec.drop_player}</strong><br>
+                                            <span class="muted">${rec.drop_team || "-"} | ${rec.drop_position || "-"} | ${rec.drop_games_remaining} games left</span>
+                                        </td>
+                                        <td class="delta ${deltaClass(delta)}">${delta >= 0 ? "+" : ""}${fmtPct(delta, 1)}</td>
+                                        <td>${fmtPct(rec.new_win_probability, 1)}</td>
+                                        <td>${(rec.flipped_categories || []).join(", ") || "-"}</td>
+                                        <td>${keyDeltas || "-"}</td>
+                                        <td>${rec.pickup_news || rec.pickup_status_full || rec.pickup_status || rec.pickup_return_hint || "-"}</td>
+                                        <td>${rec.reason}</td>
+                                    </tr>
+                                `;
+                            }).join("")}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            recsPanel.style.display = "grid";
+        }
+
+        async function runAnalysis() {
+            const prefs = collectPreferencesFromControls();
+            const params = new URLSearchParams();
+            if (prefs.selected_team_key) {
+                params.set("team_key", prefs.selected_team_key);
+            }
+            params.set("projection_window", prefs.projection_window || "recent_2w");
+            params.set("free_agent_pool", String(prefs.free_agent_pool));
+            params.set("drop_candidates", String(prefs.drop_candidates));
+            params.set("max_results", String(prefs.max_results));
+            params.set("punt", prefs.punt_categories.join(","));
+
+            const manualDrops = uniqueStrings([
+                ...prefs.selected_drop_players,
+                ...splitCsv(prefs.drop_player_text)
+            ]);
+            if (manualDrops.length) {
+                params.set("drop_player", manualDrops.join(","));
+            }
+
+            const neverDrops = uniqueStrings([
+                ...prefs.selected_never_drop_players,
+                ...splitCsv(prefs.never_drop_text)
+            ]);
+            if (neverDrops.length) {
+                params.set("never_drop", neverDrops.join(","));
+            }
+
+            params.set("include_current_score", String(prefs.include_current_score));
+            params.set("include_news_context", String(prefs.include_news_context));
+            params.set("include_percent_owned_guard", String(prefs.include_percent_owned_guard));
+            params.set("respect_undroppable", String(prefs.respect_undroppable));
+            params.set("ownership_protect_threshold", String(prefs.ownership_protect_threshold));
+
+            runBtn.disabled = true;
+            setStatus("Running analysis...");
+            summaryPanel.style.display = "none";
+            dropsPanel.style.display = "none";
+            recsPanel.style.display = "none";
+
+            await savePreferences(false);
+
+            try {
+                const resp = await fetch(`/api/waiver/analyze?${params.toString()}`);
+                const payload = await resp.json();
+
+                if (!resp.ok || !payload.success) {
+                    const errorMessage = payload.error || "Analysis failed.";
+                    throw new Error(errorMessage);
+                }
+
+                renderSummary(payload.data);
+                renderDrops(payload.data);
+                renderRecommendations(payload.data);
+                renderRosterToggles(payload.data.my_roster || [], true);
+                if (Array.isArray(payload.data.available_teams)) {
+                    renderTeamOptions(
+                        payload.data.available_teams,
+                        payload.data.my_team_key || prefs.selected_team_key
+                    );
+                }
+                pendingTeamKey = payload.data.my_team_key || teamKeySelect.value || pendingTeamKey;
+                setStatus(`Done. Generated at ${payload.data.generated_at}.`);
+            } catch (err) {
+                setStatus(err.message || "Analysis failed.", true);
+            } finally {
+                runBtn.disabled = false;
+            }
+        }
+
+        async function init() {
+            renderPuntOptions();
+            renderRosterToggles([], false);
+            await loadPreferences();
+            await loadTeamOptions(pendingTeamKey);
+            if (pendingTeamKey && !teamKeySelect.value) {
+                teamKeySelect.value = pendingTeamKey;
+            }
+        }
+
+        teamKeySelect.addEventListener("change", () => {
+            pendingTeamKey = teamKeySelect.value || "";
+        });
+        savePrefsBtn.addEventListener("click", () => {
+            savePreferences(true);
+        });
+        resetPrefsBtn.addEventListener("click", resetPreferences);
+        runBtn.addEventListener("click", runAnalysis);
+        init();
+    </script>
+</body>
+</html>

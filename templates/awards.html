@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏆 Putilla Awards - Chantasy League</title>
+    
+    <!-- ============================================== -->
+    <!-- STYLES - All CSS in one <style> block -->
+    <!-- ============================================== -->
+    <style>
+        /* ========================================
+         * GLOBAL RESET & BASE STYLES
+         * ======================================== */
+        
+        /* Reset browser default margins/padding */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;  /* Include padding/border in width calculations */
+        }
+
+        /* Body: Purple gradient background, minimum full screen height */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);  /* Purple gradient */
+            min-height: 100vh;  /* At least full viewport height */
+            padding: 20px;
+            color: #333;
+        }
+
+        /* Main container: centered, max width for readability */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;  /* Center horizontally */
+        }
+
+        /* ========================================
+         * HEADER SECTION
+         * ======================================== */
+        
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);  /* Soft shadow */
+            text-align: center;
+        }
+
+        /* Main title: gradient text effect */
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            /* Create gradient text by clipping gradient to text */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header .subtitle {
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        /* Timestamp metadata */
+        .header .meta {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        /* ========================================
+         * LOADING STATE
+         * ======================================== */
+        
+        .loading {
+            text-align: center;
+            padding: 60px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .loading h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        /* Spinning loading indicator */
+        .spinner {
+            border: 4px solid #f3f3f3;  /* Light grey border */
+            border-top: 4px solid #667eea;  /* Purple top creates spinning effect */
+            border-radius: 50%;  /* Make it circular */
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;  /* Continuous rotation */
+            margin: 0 auto;
+        }
+
+        /* Rotation animation for spinner */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ========================================
+         * AWARDS GRID LAYOUT
+         * ======================================== */
+        
+        /* CSS Grid: responsive layout that adjusts to screen size */
+        .awards-grid {
+            display: grid;
+            /* Auto-fit: creates as many columns as fit
+             * minmax(350px, 1fr): each column at least 350px, grows to fill space
+             * On small screens: 1 column. On large: 2-3 columns */
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;  /* Space between cards */
+            margin-bottom: 30px;
+        }
+
+        /* ========================================
+         * AWARD CARD STYLING
+         * ======================================== */
+        
+        .award-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            /* Smooth transitions for hover effects */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Hover effect: lift card and enhance shadow */
+        .award-card:hover {
+            transform: translateY(-5px);  /* Move up 5px */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);  /* Deeper shadow */
+        }
+
+        /* Colored top borders for different award tiers */
+        .award-card.gold {
+            border-top: 4px solid #FFD700;  /* Gold color */
+        }
+
+        .award-card.silver {
+            border-top: 4px solid #C0C0C0;  /* Silver color */
+        }
+
+        .award-card.bronze {
+            border-top: 4px solid #CD7F32;  /* Bronze color */
+        }
+
+        /* Large emoji at top of card */
+        .award-emoji {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .award-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .award-description {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        /* ========================================
+         * WINNER DISPLAY
+         * ======================================== */
+        
+        /* Winner section: purple gradient background */
+        .winner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .winner-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .winner-team {
+            font-size: 1em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        /* Stats displayed in monospace font for alignment */
+        .winner-stats {
+            font-size: 0.95em;
+            opacity: 0.95;
+            font-family: 'Courier New', monospace;  /* Fixed-width font for numbers */
+        }
+
+        /* ========================================
+         * RUNNER-UP DISPLAY
+         * ======================================== */
+        
+        /* Runner-up section: light grey background */
+        .runner-up {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #ccc;  /* Left accent bar */
+        }
+
+        .runner-up-title {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .runner-up-entry {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        /* ========================================
+         * REFRESH BUTTON
+         * ======================================== */
+        
+        /* Big purple gradient button */
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;  /* Fully rounded pill shape */
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin: 20px auto;
+            display: block;  /* Block display with auto margin centers it */
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .action-link {
+            text-decoration: none;
+            text-align: center;
+        }
+
+        /* Hover: lift button slightly */
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Active (clicking): press down */
+        .refresh-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ========================================
+         * ERROR DISPLAY
+         * ======================================== */
+        
+        .error {
+            background: #ff6b6b;  /* Red background */
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* ========================================
+         * FOOTER
+         * ======================================== */
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.8;
+        }
+
+        /* ========================================
+         * NOTES SECTION
+         * ======================================== */
+        
+        .notes-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 40px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+        }
+
+        .notes-section h3 {
+            color: #667eea;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notes-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .notes-section li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .notes-section li:before {
+            content: "📌";
+            position: absolute;
+            left: 0;
+        }
+
+        /* ========================================
+         * BETA WARNING BANNER
+         * ======================================== */
+        
+        /* Red pulsing banner at top */
+        .beta-banner {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: bold;
+            box-shadow: 0 5px 20px rgba(255, 107, 107, 0.3);
+            border: 3px solid #fff;
+            animation: pulse 2s infinite;  /* Pulsing animation */
+        }
+
+        /* Pulse animation: subtle scale effect */
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);    /* Normal size */
+            }
+            50% {
+                transform: scale(1.02); /* Slightly larger */
+            }
+        }
+
+        .beta-banner .warning-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        /* ========================================
+         * RESPONSIVE DESIGN - MOBILE
+         * ======================================== */
+        
+        /* On small screens (phones): single column layout */
+        @media (max-width: 768px) {
+            .awards-grid {
+                grid-template-columns: 1fr;  /* Force single column */
+            }
+
+            .header h1 {
+                font-size: 2em;  /* Smaller title on mobile */
+            }
+
+            .header {
+                padding: 20px;  /* Less padding on mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ============================================== -->
+    <!-- HTML STRUCTURE -->
+    <!-- ============================================== -->
+    
+    <div class="container">
+        <!-- Beta warning banner (pulsing red) -->
+        <div class="beta-banner">
+            <div class="warning-icon">⚠️</div>
+            <div>ANTES DE QUE HAYA LLORAERA ESTO ES UN BETA POC Y LOS CRITERIOS NECESITAN AJUSTES. MAMNESE UN BICHO</div>
+        </div>
+
+        <!-- Page header -->
+        <div class="header">
+            <h1>🏆 LOS PUTILLA AWARDS 🏆</h1>
+            <div class="subtitle">Chantasy 2025-26 League Honors</div>
+            <!-- Timestamp gets filled in by JavaScript -->
+            <div class="meta" id="generated-at">Loading...</div>
+        </div>
+
+        <!-- Loading state (shows spinner while fetching data) -->
+        <div id="loading" class="loading">
+            <h2>🏀 Loading Awards...</h2>
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Error state (shows if API call fails) -->
+        <div id="error" class="error" style="display: none;">
+            <h2>⚠️ Error Loading Awards</h2>
+            <p id="error-message"></p>
+        </div>
+
+        <!-- Main awards content (hidden until data loads) -->
+        <div id="awards-container" style="display: none;">
+            <!-- Refresh button to recalculate awards -->
+            <div class="action-bar">
+                <button class="refresh-btn" onclick="refreshAwards()">🔄 Refresh Awards</button>
+                <a class="refresh-btn action-link" href="/waiver">🎯 Waiver Optimizer</a>
+            </div>
+            
+            <!-- Team Awards Section -->
+            <h2 style="color: white; text-align: center; margin-top: 40px; font-size: 2em;">🏀 Team Awards</h2>
+            <!-- Grid gets filled by JavaScript with team award cards -->
+            <div id="team-awards-grid" class="awards-grid"></div>
+            
+            <!-- Player Awards Section -->
+            <h2 style="color: white; text-align: center; margin-top: 60px; font-size: 2em;">⭐ Player Awards</h2>
+            <!-- Grid gets filled by JavaScript with player award cards -->
+            <div id="player-awards-grid" class="awards-grid"></div>
+            
+            <!-- Notes Section -->
+            <div class="notes-section">
+                <h3>📋 Notes</h3>
+                <ul>
+                    <li><strong>Only TRUE PUTILLAS count:</strong> Players must be dropped 2+ times to be considered for most awards. Single drops don't count.</li>
+                    <li><strong>Deni Avdija:</strong> Not eligible for most awards. However, Deni DOES count for "El Putilla Housewife" award.</li>
+                    <li><strong>Player Lists:</strong> All team awards show the players involved in that award.</li>
+                </ul>
+            </div>
+            
+            <!-- Detailed Criteria Breakdown -->
+            <div class="notes-section" style="margin-top: 20px;">
+                <h3>📊 Award Criteria & Calculations</h3>
+                
+                <h4 style="color: #667eea; margin-top: 20px; margin-bottom: 10px;">🏀 Team Awards</h4>
+                <ul>
+                    <li><strong>👑 Putilla Suprema:</strong> Team with most total weeks putilla players were rostered. Counts all weeks that any putilla (dropped 2+ times) was on the team.</li>
+                    
+                    <li><strong>🥈 Putilla de Plata:</strong> 2nd place in total weeks putilla players were rostered.</li>
+                    
+                    <li><strong>🥉 Putilla de Bronce:</strong> 3rd place in total weeks putilla players were rostered.</li>
+                    
+                    <li><strong>⚡ Putilla Más Activa:</strong> Team with most unique putilla players rostered. Measures roster churn - how many different putillas did you try?</li>
+                    
+                    <li><strong>💎 Putilla Fiel:</strong> Team with fewest unique putilla players. The most loyal to their bad picks.</li>
+                    
+                    <li><strong>🏠 El Putilla Housewife:</strong> Team with most players added but never dropped. These are the "keepers." <em>Note: Deni Avdija counts here!</em></li>
+                </ul>
+                
+                <h4 style="color: #667eea; margin-top: 20px; margin-bottom: 10px;">⭐ Player Awards</h4>
+                <ul>
+                    <li><strong>💰 La Putilla Escondida (Hidden Gem):</strong> Best value per week. Minimum 5 weeks rostered. Formula: Total fantasy value ÷ Weeks rostered.</li>
+                    
+                    <li><strong>🌟 Putilla MVP:</strong> Highest total fantasy value. Minimum 10 weeks rostered. Rewards the putilla who provided most value overall.</li>
+                    
+                    <li><strong>🗑️ Putilla Basura (Trash):</strong> Worst value per week. Minimum 5 weeks rostered. The truly bad pickup. <em>Note: MVP winner is excluded to avoid conflicts.</em></li>
+                </ul>
+                
+                <h4 style="color: #667eea; margin-top: 20px; margin-bottom: 10px;">📈 Value Calculations</h4>
+                <ul>
+                    <li><strong>Fantasy Value:</strong> Calculated using 9-category H2H scoring:
+                        <ul style="margin-top: 8px; margin-left: 20px;">
+                            <li>Points (PTS): +1.0 per point</li>
+                            <li>Rebounds (REB): +1.2 per rebound</li>
+                            <li>Assists (AST): +1.5 per assist</li>
+                            <li>Steals (STL): +3.0 per steal</li>
+                            <li>Blocks (BLK): +3.0 per block</li>
+                            <li>Turnovers (TO): -2.0 per turnover</li>
+                            <li>Field Goal % (FG%): +150 if above league average, -100 if below</li>
+                            <li>Free Throw % (FT%): +60 if above league average, -40 if below</li>
+                            <li>3-Pointers Made (3PM): +3.0 per three</li>
+                        </ul>
+                    </li>
+                    <li><strong>Prorated Stats:</strong> Player stats are prorated based on weeks they were actually on your roster, not full season stats.</li>
+                    <li><strong>"Weeks" or "Games Started":</strong> Both terms mean the same thing - the number of weeks a player was on a team's active roster.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Made with 🖕 for Chantasy League | Updates weekly</p>
+        </div>
+    </div>
+    <!-- ============================================== -->
+    <!-- JAVASCRIPT - All client-side logic -->
+    <!-- ============================================== -->
+    <script>
+        // ========================================
+        // GLOBAL STATE
+        // ========================================
+        
+        // Store awards data once loaded from API
+        let awardsData = null;
+
+        // ========================================
+        // AWARD METADATA - Display info for each award
+        // ========================================
+        
+        /* This object defines how each award should be displayed:
+         * - emoji: Icon shown on card
+         * - title: Award name
+         * - description: What the award means
+         * - rank: Determines border color (gold/silver/bronze)
+         */
+        const awardInfo = {
+            'putilla_suprema': {
+                emoji: '👑',
+                title: 'Putilla Suprema',
+                description: 'Most games started on roster. The ultimate waiver wire warrior.',
+                rank: 'gold'
+            },
+            'putilla_de_plata': {
+                emoji: '🥈',
+                title: 'Putilla de Plata',
+                description: 'Second most games started. Silver medal hustler.',
+                rank: 'silver'
+            },
+            'putilla_de_bronce': {
+                emoji: '🥉',
+                title: 'Putilla de Bronce',
+                description: 'Third most games started. Bronze medal grinder.',
+                rank: 'bronze'
+            },
+            'putilla_mas_activa': {
+                emoji: '⚡',
+                title: 'Putilla Más Activa',
+                description: 'Most unique players rostered. Roster turnover king.',
+                rank: 'gold'
+            },
+            'putilla_fiel': {
+                emoji: '💎',
+                title: 'Putilla Fiel',
+                description: 'Fewest unique players rostered. Team loyalty award.',
+                rank: 'gold'
+            },
+            'el_putilla_housewife': {
+                emoji: '🏠',
+                title: 'El Putilla Housewife',
+                description: 'Most players added but never dropped. Keeper commitment.',
+                rank: 'gold'
+            },
+            'la_putilla_escondida': {
+                emoji: '💰',
+                title: 'La Putilla Escondida',
+                description: 'Best waiver pickup. Found gold in the trash.',
+                rank: 'gold'
+            },
+            'putilla_MVP': {
+                emoji: '🌟',
+                title: 'Putilla MVP',
+                description: 'Highest scoring waiver pickup. Maximum value add.',
+                rank: 'gold'
+            },
+            'putilla_basura': {
+                emoji: '🗑️',
+                title: 'Putilla Basura',
+                description: 'Worst waiver pickup. We all make mistakes.',
+                rank: 'gold'
+            }
+        };
+
+        // ========================================
+        // API CALLS
+        // ========================================
+        
+        /**
+         * Fetch awards data from Flask API.
+         * 
+         * This function:
+         * 1. Calls /api/awards endpoint (returns JSON)
+         * 2. Checks if request succeeded
+         * 3. Stores data in global awardsData variable
+         * 4. Calls displayAwards() to render the UI
+         * 5. Shows error if anything fails
+         * 
+         * API Response Structure:
+         * {
+         *   "success": true,
+         *   "data": {
+         *     "team_awards": {...},
+         *     "player_awards": {...},
+         *     "generated_at": "January 6, 2026 at 3:45 PM",
+         *     "current_week": 12
+         *   }
+         * }
+         */
+        async function loadAwards() {
+            try {
+                // Fetch data from Flask backend
+                const response = await fetch('/api/awards');
+                const result = await response.json();
+
+                // Check if backend returned an error
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+
+                // Store data globally and render UI
+                awardsData = result.data;
+                displayAwards();
+                
+            } catch (error) {
+                // Show error message to user
+                showError(error.message);
+            }
+        }
+
+        // ========================================
+        // UI RENDERING
+        // ========================================
+        
+        /**
+         * Render awards data to the page.
+         * 
+         * This function:
+         * 1. Hides loading spinner
+         * 2. Shows awards container
+         * 3. Updates timestamp
+         * 4. Populates team awards grid
+         * 5. Populates player awards grid
+         */
+        function displayAwards() {
+            // Hide loading, show awards
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('awards-container').style.display = 'block';
+
+            // Update timestamp in header
+            document.getElementById('generated-at').textContent = 
+                `Last updated: ${awardsData.generated_at}`;
+
+            // ========================================
+            // RENDER TEAM AWARDS
+            // ========================================
+            
+            const teamGrid = document.getElementById('team-awards-grid');
+            teamGrid.innerHTML = '';  // Clear existing content
+
+            // Define specific order for team awards: medal awards first, then others
+            const teamAwardOrder = [
+                'putilla_suprema',
+                'putilla_de_plata',
+                'putilla_de_bronce',
+                'putilla_mas_activa',
+                'putilla_fiel',
+                'el_putilla_housewife'
+            ];
+
+            // Loop through awards in specified order
+            for (const awardKey of teamAwardOrder) {
+                const awardData = awardsData.team_awards?.[awardKey];
+                const info = awardInfo[awardKey];
+                if (!info || !awardData) continue;  // Skip if no data
+
+                const card = createAwardCard(info, awardData);
+                teamGrid.appendChild(card);
+            }
+
+            // ========================================
+            // RENDER PLAYER AWARDS
+            // ========================================
+            
+            const playerGrid = document.getElementById('player-awards-grid');
+            playerGrid.innerHTML = '';
+
+            for (const [awardKey, awardData] of Object.entries(awardsData.player_awards || {})) {
+                const info = awardInfo[awardKey];
+                if (!info || !awardData) continue;
+
+                const card = createAwardCard(info, awardData);
+                playerGrid.appendChild(card);
+            }
+        }
+
+        /**
+         * Create an award card DOM element.
+         * 
+         * Args:
+         *   info: Award metadata (emoji, title, description from awardInfo)
+         *   data: Award data from API (winner, runners_up)
+         * 
+         * Returns:
+         *   DOM element (div.award-card) ready to be added to page
+         */
+        function createAwardCard(info, data) {
+            // Create card container
+            const card = document.createElement('div');
+            card.className = `award-card ${info.rank}`;  // Add gold/silver/bronze class
+
+            // Build HTML content
+            let html = `
+                <div class="award-emoji">${info.emoji}</div>
+                <div class="award-title">${info.title}</div>
+                <div class="award-description">${info.description}</div>
+            `;
+
+            // ========================================
+            // WINNER SECTION
+            // ========================================
+            
+            if (data.winner) {
+                // Check if this is a team award (player_name is "Team Total")
+                const isTeamAward = data.winner.player_name === 'Team Total';
+                
+                if (isTeamAward) {
+                    // Team award: show team name large, "Team" small
+                    html += `
+                        <div class="winner">
+                            <div class="winner-name">${data.winner.team_name}</div>
+                            <div class="winner-team" style="font-size: 0.8em; opacity: 0.7;">Team</div>
+                            <div class="winner-stats">${formatStats(data.winner)}</div>
+                    `;
+                    
+                    // If this award has a player list, display it
+                    if (data.winner.player_list && data.winner.player_list.length > 0) {
+                        html += `
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3);">
+                                <div style="font-size: 0.85em; opacity: 0.8; margin-bottom: 8px;">Players:</div>
+                                <div style="font-size: 0.8em; line-height: 1.6;">
+                                    ${data.winner.player_list.join(', ')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    html += `</div>`;
+                } else {
+                    // Player award: show player name large, team name below
+                    html += `
+                        <div class="winner">
+                            <div class="winner-name">${data.winner.player_name}</div>
+                            <div class="winner-team">${data.winner.team_name}</div>
+                            <div class="winner-stats">${formatStats(data.winner)}</div>
+                        </div>
+                    `;
+                }
+            }
+
+            // ========================================
+            // RUNNER-UPS SECTION
+            // ========================================
+            
+            if (data.runners_up && data.runners_up.length > 0) {
+                html += `<div class="runner-up">`;
+                html += `<div class="runner-up-title">Runner-ups:</div>`;
+                
+                // Show top 3 runner-ups
+                for (const runner of data.runners_up.slice(0, 3)) {
+                    // Check if this is a team award
+                    const isTeamAward = runner.player_name === 'Team Total';
+                    
+                    if (isTeamAward) {
+                        // Team award: just show team name
+                        html += `
+                            <div class="runner-up-entry">
+                                ${runner.team_name} - ${formatStats(runner)}
+                        `;
+                        
+                        // If this award has a player list, show it
+                        if (runner.player_list && runner.player_list.length > 0) {
+                            html += `
+                                <div style="font-size: 0.85em; opacity: 0.7; margin-top: 5px; margin-left: 10px;">
+                                    Players: ${runner.player_list.join(', ')}
+                                </div>
+                            `;
+                        }
+                        
+                        html += `</div>`;
+                    } else {
+                        // Player award: show player name and team
+                        html += `
+                            <div class="runner-up-entry">
+                                ${runner.player_name} (${runner.team_name}) - ${formatStats(runner)}
+                            </div>
+                        `;
+                    }
+                }
+                html += `</div>`;
+            }
+
+            // Set HTML and return card
+            card.innerHTML = html;
+            return card;
+        }
+
+        /**
+         * Format statistics for display.
+         * 
+         * Each award tracks different stats, so this function checks
+         * which stat exists and formats it appropriately.
+         * 
+         * Args:
+         *   entry: Winner or runner-up object with stats
+         * 
+         * Returns:
+         *   Formatted string like "15 games started" or "3.45 value/game"
+         */
+        function formatStats(entry) {
+            // Check which stat exists and format accordingly
+            if (entry.games_started !== undefined) {
+                return `${entry.games_started} games started`;
+            }
+            if (entry.unique_players !== undefined) {
+                return `${entry.unique_players} unique players`;
+            }
+            if (entry.total_value !== undefined) {
+                return `${entry.total_value.toFixed(1)} total value`;  // 1 decimal
+            }
+            if (entry.value_per_game !== undefined) {
+                return `${entry.value_per_game.toFixed(2)} value/game`;  // 2 decimals
+            }
+            if (entry.avg_value !== undefined) {
+                return `${entry.avg_value.toFixed(2)} avg value`;
+            }
+            return '';  // No stats available
+        }
+
+        // ========================================
+        // ERROR HANDLING
+        // ========================================
+        
+        /**
+         * Display error message to user.
+         * 
+         * Args:
+         *   message: Error message string
+         */
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('awards-container').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error-message').textContent = message;
+        }
+
+        // ========================================
+        // REFRESH FUNCTIONALITY
+        // ========================================
+        
+        /**
+         * Refresh awards data (recalculate from Yahoo API).
+         * 
+         * This function:
+         * 1. Hides current awards
+         * 2. Shows loading spinner
+         * 3. Fetches fresh data from /api/awards
+         * 4. Re-renders the page
+         * 
+         * Called when user clicks "Refresh Awards" button.
+         */
+        async function refreshAwards() {
+            // Show loading state
+            document.getElementById('awards-container').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            
+            // Fetch fresh data
+            await loadAwards();
+        }
+
+        // ========================================
+        // INITIALIZATION
+        // ========================================
+        
+        // Load awards when page first loads
+        loadAwards();
+    </script>
+</body>
+</html>

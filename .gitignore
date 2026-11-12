@@ -1,0 +1,29 @@
+# Secrets and local state (never commit)
+.env
+oauth2.json
+hashtag_session.json
+hashtag_player_map.json
+waiver_user_prefs.json
+.cache/
+.hashtag_cache/
+.claude/settings.local.json
+
+# Recorded Hashtag pages contain league data; keep them local
+tests/fixtures/hashtag/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+venv/
+.venv/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
