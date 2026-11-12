@@ -33,6 +33,12 @@ def cmd_roster_whoami(args) -> int:
     return 0
 
 
+def cmd_roster_cleanup(args) -> int:
+    removed = _client(Settings.from_env()).remove_added_players()
+    print("Removed from planner sandbox: " + (", ".join(removed) if removed else "nothing to remove"))
+    return 0
+
+
 def cmd_roster_matchup(args) -> int:
     settings = Settings.from_env()
     p = _client(settings).planner(week=args.week, projection=args.projection, use_cache=not args.no_cache)
@@ -128,7 +134,9 @@ def _exact_check(client, ctx, rep: dict[str, Any], args) -> None:
             out = client.planner_scenario(drop_hashtag_ids=[rep["drop"]["hashtag_id"]], add_target=rec["add_target"], use_cache=not args.no_cache)
             wp = matchup_win_probability(out["prob"], rep["weights"]["punt"])
             base = rep["matchup"]["hashtag_win_probability"]
-            cand["exact"] = {"hashtag_record": out["record"], "hashtag_win_probability": wp, "delta_pts": round((wp - base) * 100, 1) if base is not None else None}
+            my, opp = out["team_order"][0], out["team_order"][1]
+            cand["exact"] = {"hashtag_record": out["record"], "hashtag_win_probability": wp, "delta_pts": round((wp - base) * 100, 1) if base is not None else None,
+                             "categories": {c: round(p, 2) for c, p in out["prob"].items()}, "after_my": out["after"][my], "after_opp": out["after"][opp]}
         except Exception as exc:
             cand["exact"] = f"failed: {exc}"
 
@@ -164,6 +172,9 @@ def _print_report(rep: dict[str, Any]) -> None:
 def add_subcommands(sub: argparse._SubParsersAction) -> None:
     r = sub.add_parser("roster", help="roster decisions from Hashtag Basketball (premium)")
     rs = r.add_subparsers(dest="roster_command", required=True)
+
+    cl = rs.add_parser("cleanup", help="remove players added to the planner sandbox (X links)")
+    cl.set_defaults(func=cmd_roster_cleanup)
 
     w = rs.add_parser("whoami", help="league and team as Hashtag sees them")
     w.add_argument("--no-cache", action="store_true")

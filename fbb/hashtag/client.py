@@ -49,7 +49,14 @@ class HashtagClient:
             name = state.name_for(suffix)
             if state.fields.get(name) == str(value):
                 continue
-            if str(value) not in {v for v, _ in state.selects.get(name, [])}:
+            options = [v for v, _ in state.selects.get(name, [])]
+            if str(value) not in options and str(value).isdigit() and all(o.isdigit() for o in options):
+                # numeric selects (e.g. "show top N"): take the largest option not above the request
+                below = [o for o in options if int(o) <= int(value)]
+                value = max(below, key=int) if below else min(options, key=int)
+                if state.fields.get(name) == str(value):
+                    continue
+            if str(value) not in options:
                 raise HashtagPageError(f"{suffix}: value {value!r} is not an option ({[v for v, _ in state.selects.get(name, [])][:12]}...)")
             target = state.postback_targets.get(name, name)
             html = self.session.postback(url, state, {name: str(value)}, event_target=target, use_cache=use_cache)
@@ -97,8 +104,27 @@ class HashtagClient:
         data["_html"] = html
         return data
 
+    def remove_added_players(self, use_cache: bool = False, max_rounds: int = 30) -> list[str]:
+        """Delete every player that was added to the planner sandbox (rows with an X link). Returns the names removed."""
+        removed: list[str] = []
+        for _ in range(max_rounds):
+            html, state, url = self.planner_raw(use_cache=False)
+            data = parsers.parse_planner(html)
+            extra = [p for p in data["roster"] if p.get("delete_target")]
+            if not extra:
+                break
+            target = extra[0]["delete_target"]
+            self.session.postback(url, state, {}, event_target=target, use_cache=False)
+            removed.append(extra[0]["name"])
+        return removed
+
     def planner_scenario(self, drop_hashtag_ids: list[str] = (), add_target: str = "", use_cache: bool = True, **kw) -> dict[str, Any]:
-        """Planner AFTER/PROBABILITY with `drop` players' remaining games unchecked and one recommended player added."""
+        """Planner AFTER/PROBABILITY with `drop` players' remaining games unchecked and one recommended player added.
+
+        The planner is a server-side sandbox: an added player stays on the page until deleted, so this always
+        removes the player it added before returning (and never caches the intermediate postbacks).
+        """
+        use_cache = False
         data = self.planner_with_recommendations(use_cache=use_cache, **kw)
         html, state, url = data["_html"], data["_state"], data["_url"]
         if drop_hashtag_ids:
@@ -119,6 +145,14 @@ class HashtagClient:
             state = extract_form_state(html, url)
         out = parsers.parse_planner(html)
         out["_state"] = state
+        if add_target:
+            added = [p for p in out["roster"] if p.get("delete_target")]
+            for p in added:
+                try:
+                    html = self.session.postback(url, state, {}, event_target=p["delete_target"], use_cache=False)
+                    state = extract_form_state(html, url)
+                except Exception as exc:  # leave a clear trace; remove_added_players() can finish the job
+                    log.warning("Could not remove %s from the planner sandbox: %s", p["name"], exc)
         return out
 
     # -- waiver wire & grid --------------------------------------------------------

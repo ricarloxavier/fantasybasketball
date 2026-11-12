@@ -89,8 +89,12 @@ def _player_cell(cell: Tag) -> dict[str, Any]:
             injury = "out"
         elif "injur" in title:
             injury = injury or "injured"
-    note_span = cell.find("span", attrs={"aria-label": True}, class_="text-dark")
-    note = note_span["aria-label"].strip() if note_span else ""
+    note = ""
+    for span in cell.find_all("span", class_="text-dark"):
+        text = span.get("aria-label") or span.get("data-bs-original-title") or span.get("title") or ""
+        if text.strip():
+            note = text.strip()
+            break
     rookie = any("fa-registered" in (i.get("class") or []) for i in cell.find_all("i"))
     hid = cell.find("input", attrs={"name": re.compile(r"HFpid$")})
     gp_m = re.search(r"GP:\s*(\d+)", _text(cell))
@@ -235,6 +239,9 @@ def parse_planner(html: str) -> dict[str, Any]:
         player["games"] = games
         player["games_left"] = sum(1 for g in games if g["counted"])
         player["games_scheduled"] = len(games)
+        delete_link = row.find("a", href=re.compile(r"lnkDelete"))
+        m = re.search(r"__doPostBack\('([^']+)'", delete_link["href"]) if delete_link else None
+        player["delete_target"] = m.group(1) if m else ""     # present only on players added in the planner sandbox
         roster.append(player)
 
     return {
