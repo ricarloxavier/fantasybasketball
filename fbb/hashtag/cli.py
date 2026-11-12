@@ -141,10 +141,10 @@ def _print_report(rep: dict[str, Any]) -> None:
     print("Categories (model / Hashtag): " + "  ".join(f"{c} {v['prob']*100:.0f}/{(v['hashtag_prob'] or 0)*100:.0f}" for c, v in m["categories"].items()))
     inj = f" · {d['injury']}" if d["injury"] else ""
     print(f"\nDrop candidate: {d['name']} ({'/'.join(d['positions'])}-{d['team']}){inj} · {d['games_left_this_week']} game(s) left this week, {d['games_next_week']} next week · "
-          f"z/game {d['z_per_game']:+.2f} · opportunity x{d['opportunity']} · mpg {d['mpg']}")
-    print(f"Weights: this week x{rep['weights']['this_week']} (closeness x{m['closeness_multiplier']}), next week {rep['weights']['next_week']}/z-game, ROS {rep['weights']['ros']}/z"
+          f"value/game {d['z_per_game']:+.2f} · opportunity x{d['opportunity']} · mpg {d['mpg']}")
+    print(f"Weights: this week x{rep['weights']['this_week']} (closeness x{m['closeness_multiplier']}), next week {rep['weights']['next_week']}/value-game, ROS {rep['weights']['ros']}/value"
           + (f" · punting {','.join(rep['weights']['punt'])}" if rep["weights"]["punt"] else "") + f" · pool {rep['pool_size']} players")
-    print(f"\n{'add':<24}{'tm':<4}{'now':>4}{'next':>5}{'z/g':>6}{'Δweek':>7}{'Δnext':>7}{'ΔROS':>7}{'score':>7}  flips / notes")
+    print(f"\n{'add':<24}{'tm':<4}{'now':>4}{'next':>5}{'val/g':>6}{'Δweek':>7}{'Δnext':>7}{'ΔROS':>7}{'score':>7}  flips / notes")
     for c in rep["candidates"]:
         flips = ",".join(c["flips"]) or "-"
         exact = c.get("exact")

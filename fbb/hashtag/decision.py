@@ -17,7 +17,7 @@ from typing import Any, Mapping, Optional
 
 from ..categories import ALL_CATEGORIES, COUNTING_CATEGORIES, PERCENT_CATEGORIES, name_key, normalize_team
 from ..config import DEFAULT_PARAMS, ModelParams
-from ..matchup import build_category_view, matchup_win_probability, summarize_category_changes, view_probs
+from ..matchup import build_category_view, calibrate_scales, matchup_win_probability, summarize_category_changes, view_probs
 from ..projection import estimate_volume, finalize_percentages
 from ..schedule import NbaSchedule
 from ..util import clamp
@@ -30,11 +30,11 @@ DAY_INDEX = {"MON": 0, "TUE": 1, "WED": 2, "THU": 3, "FRI": 4, "SAT": 5, "SUN": 
 @dataclass
 class DecisionWeights:
     this_week: float = 1.0          # per win-probability point this week
-    next_week: float = 2.0          # points per z-unit of per-game value, per game next week
-    ros: float = 3.0                # points per z-unit of per-game value, rest of season (per-game basis)
+    next_week: float = 0.7          # points per value-unit per game next week
+    ros: float = 5.0                # points per value-unit of rest-of-season per-game production
     closeness_boost: float = 2.0    # this-week gain counts up to (1+boost)x when the matchup is a coin flip
     hold_threshold: float = 1.0     # best score below this = hold
-    streaming_ros_tolerance: float = 0.6  # z-units of ROS value you accept losing for a this-week gain
+    streaming_ros_tolerance: float = 0.15  # value-units of ROS production you accept losing for a this-week gain
     punt: list[str] = field(default_factory=list)
     # availability multipliers by Hashtag injury flag
     injury_now: Mapping[str, float] = field(default_factory=lambda: {"out": 0.0, "injured": 0.0, "doubt": 0.75})
@@ -71,7 +71,12 @@ def per_game_value_table(pool: list[Mapping[str, Any]]) -> dict[str, Any]:
 
 
 def player_z(stats: Mapping[str, float], table: Mapping[str, Any], punt: list[str] = ()) -> tuple[float, dict[str, float]]:
-    """Per-game z-score total (punted categories excluded) and per-category z."""
+    """Per-game production in category-spread units (punted categories excluded) and the per-category breakdown.
+
+    Counting stats are measured above zero (an empty slot produces nothing), each divided by the pool's standard
+    deviation so a block counts like a block and a point like a point. Percentages are volume-weighted impact
+    versus the pool's shooting, which can be negative. Turnovers subtract.
+    """
     vol = estimate_volume(stats)
     per_cat: dict[str, float] = {}
     for cat in ALL_CATEGORIES:
@@ -83,9 +88,10 @@ def player_z(stats: Mapping[str, float], table: Mapping[str, Any], punt: list[st
             raw = vol["FTM"] - table["league_ft"] * vol["FTA"]
         else:
             raw = float(stats.get(cat, 0.0))
-        z = (raw - mean) / std
+        z = raw / std
         per_cat[cat] = -z if cat == "TO" else z
-    total = sum(z for cat, z in per_cat.items() if cat not in punt)
+    active = [cat for cat in ALL_CATEGORIES if cat not in punt]
+    total = sum(per_cat[cat] for cat in active) / max(len(active), 1)
     return total, per_cat
 
 
@@ -176,14 +182,16 @@ def evaluate_drop(ctx: DecisionContext, drop_query: str, weights: DecisionWeight
 
     base_my = team_totals_from_planner(planner["after"][my_team], planner["roster"])
     base_opp = {cat: float(planner["after"][opp_team].get(cat, 0.0)) for cat in ALL_CATEGORIES}
-    base_view = build_category_view(base_my, base_opp, punt, params, remaining_share)
+    # Calibrate the category odds to Hashtag's own probability row, so deltas are measured on their scale.
+    scales = calibrate_scales(base_my, base_opp, ctx.hashtag_probs, params) if ctx.hashtag_probs else None
+    base_view = build_category_view(base_my, base_opp, punt, params, remaining_share, scales)
     base_probs = view_probs(base_view)
     base_wp = matchup_win_probability(base_probs, punt)
     hashtag_wp = matchup_win_probability(ctx.hashtag_probs, punt) if ctx.hashtag_probs else None
     closeness = 1.0 + weights.closeness_boost * (0.5 - abs(base_wp - 0.5)) * 2.0 * 0.5  # 1 at 0/100%, 1+boost at 50%
 
-    pool = [p for p in ctx.free_agents if p.get("stats")] + [p for p in planner["roster"] if p.get("stats")]
-    table = per_game_value_table(pool)
+    # Value scale from the free-agent pool (replacement level); roster players are scored on the same scale.
+    table = per_game_value_table([p for p in ctx.free_agents if p.get("stats")] or [p for p in planner["roster"] if p.get("stats")])
 
     drop_days = {g["day"] for g in drop["games"] if g["counted"]}
     drop_contrib = contribution(drop["stats"], drop["games_left"])
@@ -215,7 +223,7 @@ def evaluate_drop(ctx: DecisionContext, drop_query: str, weights: DecisionWeight
 
         totals = {cat: max(base_my[cat] - drop_contrib[cat] + add_contrib[cat], 0.0) for cat in base_my if cat not in PERCENT_CATEGORIES}
         totals = finalize_percentages(totals)
-        view = build_category_view(totals, base_opp, punt, params, remaining_share)
+        view = build_category_view(totals, base_opp, punt, params, remaining_share, scales)
         wp = matchup_win_probability(view_probs(view), punt)
         deltas, flips = summarize_category_changes(base_view, view)
         d_week = (wp - base_wp) * 100.0
@@ -262,7 +270,7 @@ def evaluate_drop(ctx: DecisionContext, drop_query: str, weights: DecisionWeight
                  "yahoo": dict(ctx.yahoo.get(drop["name_key"], {}))},
         "matchup": {"my_team": my_team, "opp_team": opp_team, "week": planner["week"], "days_left": days_left,
                     "baseline_win_probability": base_wp, "hashtag_win_probability": hashtag_wp, "hashtag_record": planner.get("record"),
-                    "closeness_multiplier": round(closeness, 2),
+                    "closeness_multiplier": round(closeness, 2), "calibrated_to_hashtag": scales is not None,
                     "categories": {c: {"prob": round(base_probs[c], 3), "hashtag_prob": ctx.hashtag_probs.get(c), "my": round(base_my[c], 3), "opp": round(base_opp[c], 3)} for c in ALL_CATEGORIES}},
         "weights": {"this_week": weights.this_week, "next_week": weights.next_week, "ros": weights.ros, "punt": punt},
         "pool_size": table["n"],

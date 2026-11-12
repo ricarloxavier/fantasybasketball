@@ -6,11 +6,13 @@ from typing import Any, Mapping
 
 from .categories import ALL_CATEGORIES, PERCENT_CATEGORIES, REVERSE_CATEGORIES
 from .config import DEFAULT_PARAMS, ModelParams
+import math
+
 from .util import clamp, sigmoid
 
 
 def category_win_prob(my_val: float, opp_val: float, cat: str, params: ModelParams = DEFAULT_PARAMS,
-                      remaining_share: float = 1.0) -> float:
+                      remaining_share: float = 1.0, scale_override: float | None = None) -> float:
     """Probability of winning one category from projected end-of-week values.
 
     `remaining_share` is the fraction of the week still to be played (1 = whole
@@ -24,6 +26,8 @@ def category_win_prob(my_val: float, opp_val: float, cat: str, params: ModelPara
     else:
         raw = (opp_val - my_val) if cat in REVERSE_CATEGORIES else (my_val - opp_val)
         scale = (max(abs(my_val), abs(opp_val), 1.0) * params.counting_scale_ratio) + params.counting_scale_floor
+    if scale_override:
+        scale = scale_override
     if params.remaining_games_scaling > 0:
         share = clamp(remaining_share, 0.0, 1.0)
         # Full scaling (1.0): spread shrinks linearly with the share of the week left, floor 10%.
@@ -52,12 +56,14 @@ def matchup_win_probability(category_probs: Mapping[str, float], punt_categories
 
 
 def build_category_view(my_totals: Mapping[str, float], opp_totals: Mapping[str, float], punt_categories: list[str],
-                        params: ModelParams = DEFAULT_PARAMS, remaining_share: float = 1.0) -> dict[str, dict[str, Any]]:
+                        params: ModelParams = DEFAULT_PARAMS, remaining_share: float = 1.0,
+                        scales: Mapping[str, float] | None = None) -> dict[str, dict[str, Any]]:
+    """`scales` (category -> sigmoid scale) overrides the model's own spread, e.g. calibrated to a reference."""
     view: dict[str, dict[str, Any]] = {}
     for cat in ALL_CATEGORIES:
         my_val = float(my_totals.get(cat, 0.0))
         opp_val = float(opp_totals.get(cat, 0.0))
-        prob = category_win_prob(my_val, opp_val, cat, params, remaining_share)
+        prob = category_win_prob(my_val, opp_val, cat, params, remaining_share, (scales or {}).get(cat))
         if cat in REVERSE_CATEGORIES:
             winner = "YOU" if my_val < opp_val else "OPP" if opp_val < my_val else "TIE"
             margin = opp_val - my_val
@@ -123,3 +129,36 @@ def deterministic_score(view: Mapping[str, Mapping[str, Any]], punt_categories: 
     if not by_probability:
         out["ties"] = ties
     return out
+
+
+def calibrate_scales(my_totals: Mapping[str, float], opp_totals: Mapping[str, float], reference_probs: Mapping[str, float],
+                     params: ModelParams = DEFAULT_PARAMS) -> dict[str, float]:
+    """Per-category sigmoid scales that reproduce `reference_probs` (e.g. Hashtag's PROBABILITY row) for these totals.
+
+    Categories whose reference is 50% (or missing, or at the clamp) get the median ratio of the others applied to the
+    model's default scale, so every category is softened consistently.
+    """
+    scales: dict[str, float] = {}
+    ratios: list[float] = []
+    defaults: dict[str, float] = {}
+    for cat in ALL_CATEGORIES:
+        my_val, opp_val = float(my_totals.get(cat, 0.0)), float(opp_totals.get(cat, 0.0))
+        if cat in PERCENT_CATEGORIES:
+            raw, default = my_val - opp_val, params.pct_edge_scale
+        else:
+            raw = (opp_val - my_val) if cat in REVERSE_CATEGORIES else (my_val - opp_val)
+            default = (max(abs(my_val), abs(opp_val), 1.0) * params.counting_scale_ratio) + params.counting_scale_floor
+        defaults[cat] = default
+        p = reference_probs.get(cat)
+        if p is None or not (0.03 < p < 0.97) or abs(p - 0.5) < 0.005 or abs(raw) < 1e-9:
+            continue
+        logit = math.log(p / (1.0 - p))
+        if (logit > 0) != (raw > 0):
+            continue  # reference disagrees on the leader; cannot be explained by scale alone
+        scale = raw / logit
+        scales[cat] = scale
+        ratios.append(scale / default)
+    ratio = sorted(ratios)[len(ratios) // 2] if ratios else 1.0
+    for cat in ALL_CATEGORIES:
+        scales.setdefault(cat, defaults[cat] * ratio)
+    return scales
