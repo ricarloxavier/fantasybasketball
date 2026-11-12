@@ -109,6 +109,19 @@ def cmd_transactions(args: argparse.Namespace) -> int:
     client = _client(settings)
     txs = client.transactions("add,drop")
     tallies = tally_adds_drops(txs)
+    if args.same_day:
+        from .cache import TTLCache
+        from .schedule import NbaSchedule
+        from .transactions import add_events, same_day_adds
+        res = same_day_adds(add_events(txs), NbaSchedule(cache=TTLCache(settings.cache_dir, "espn")), settings.timezone)
+        if args.json:
+            _print_json(res)
+            return 0
+        print(f"Adds by fantasy team: did the added player's NBA team play that day?\n")
+        print(f"  {'team':<28}{'adds':>5}{'same day':>10}{'no game':>9}{'% no game':>11}")
+        for team, c in sorted(res["by_team"].items(), key=lambda kv: -kv[1]["adds"]):
+            print(f"  {team:<28}{c['adds']:>5}{c['same_day']:>10}{c['no_game']:>9}{100 * c['no_game'] / max(c['adds'], 1):>10.0f}%")
+        return 0
     if args.json:
         _print_json({"transactions": len(txs), "adds": tallies["adds"].most_common(args.top), "drops": tallies["drops"].most_common(args.top),
                      "trends": trends(tallies["adds"], tallies["drops"])})
@@ -174,6 +187,7 @@ def build_parser() -> argparse.ArgumentParser:
     t = sub.add_parser("transactions", help="most added and dropped players")
     t.add_argument("--top", type=int, default=20)
     t.add_argument("--trends", action="store_true")
+    t.add_argument("--same-day", action="store_true", help="per team: adds of players who played that day vs. not")
     t.add_argument("--json", action="store_true")
     t.set_defaults(func=cmd_transactions)
 
