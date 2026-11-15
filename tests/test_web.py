@@ -55,6 +55,7 @@ def test_yahoo_auth_error_is_json_503_without_traceback(app, monkeypatch):
 
 def test_unexpected_error_hides_details(app, monkeypatch):
     import web.routes.waiver as waiver_routes
+    monkeypatch.setattr(waiver_routes, "_client", lambda: object())
     monkeypatch.setattr(waiver_routes, "get_waiver_team_options", lambda *a, **k: 1 / 0)
     r = app.test_client().get("/api/waiver/teams", headers=auth_header())
     assert r.status_code == 500 and r.get_json()["error"] == "Internal error; see server log."
