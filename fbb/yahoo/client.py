@@ -38,9 +38,32 @@ class YahooApiError(RuntimeError):
         self.url = url
 
 
-def load_oauth(oauth_file: Path, timeout: float = 25.0) -> OAuth2:
-    """Load tokens from `oauth_file`, refreshing the access token when expired."""
+def _seed_oauth_file(path: Path, seed_json: str) -> None:
+    """Write `seed_json` (the contents of a linked oauth2.json) to `path`.
+
+    Lets a machine without the file, such as a cloud session, carry the tokens
+    in the YAHOO_OAUTH_JSON environment variable. The file is still needed on
+    disk because yahoo_oauth refreshes the access token in place.
+    """
+    try:
+        data = json.loads(seed_json)
+    except ValueError as exc:
+        raise YahooAuthError(f"YAHOO_OAUTH_JSON is not valid JSON: {exc}") from exc
+    if not isinstance(data, dict) or not data.get("consumer_key") or not data.get("consumer_secret"):
+        raise YahooAuthError("YAHOO_OAUTH_JSON must be the contents of oauth2.json, with consumer_key and consumer_secret.")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2), "utf-8")
+    log.info("Wrote Yahoo OAuth file %s from YAHOO_OAUTH_JSON", path)
+
+
+def load_oauth(oauth_file: Path, timeout: float = 25.0, seed_json: str = "") -> OAuth2:
+    """Load tokens from `oauth_file`, refreshing the access token when expired.
+
+    When the file is missing and `seed_json` is given, the file is created from it first.
+    """
     path = Path(oauth_file)
+    if not path.exists() and seed_json:
+        _seed_oauth_file(path, seed_json)
     if not path.exists():
         raise YahooAuthError(
             f"Yahoo OAuth file not found at {path}. Create it with consumer_key/consumer_secret "
@@ -76,7 +99,8 @@ class YahooClient:
 
     @classmethod
     def from_settings(cls, settings: Settings, params: ModelParams = DEFAULT_PARAMS) -> "YahooClient":
-        return cls(load_oauth(settings.yahoo_oauth_file), settings.league_id, settings.team_key, params=params)
+        oauth = load_oauth(settings.yahoo_oauth_file, seed_json=settings.yahoo_oauth_json)
+        return cls(oauth, settings.league_id, settings.team_key, params=params)
 
     # -- HTTP ------------------------------------------------------------------
     def get(self, path: str) -> dict[str, Any]:

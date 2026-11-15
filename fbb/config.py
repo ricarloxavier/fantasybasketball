@@ -26,6 +26,7 @@ class Settings:
     """Runtime configuration. Build with `Settings.from_env()`."""
 
     yahoo_oauth_file: Path = REPO_ROOT / "oauth2.json"
+    yahoo_oauth_json: str = ""          # contents of oauth2.json; seeds the file when it is missing (cloud sessions)
     league_id: str = "17275"            # numeric Yahoo league id or a full key like 466.l.10145
     team_key: str = ""                  # empty = the team Yahoo says belongs to the login
     timezone: str = "America/New_York"
@@ -55,6 +56,7 @@ class Settings:
 
         return cls(
             yahoo_oauth_file=path_of(_env(env, "YAHOO_OAUTH_FILE"), root / "oauth2.json"),
+            yahoo_oauth_json=_env(env, "YAHOO_OAUTH_JSON"),
             league_id=_env(env, "FANTASY_LEAGUE_ID") or _env(env, "FANTASY_LEAGUE_KEY") or "17275",
             team_key=_env(env, "FANTASY_TEAM_KEY"),
             timezone=_env(env, "TIMEZONE", "America/New_York"),
